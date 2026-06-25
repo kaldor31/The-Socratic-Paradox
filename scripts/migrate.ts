@@ -25,7 +25,6 @@ const files = [
 ];
 
 function stripComments(sqlText: string): string {
-  // Remove line comments that start with -- (not inside strings)
   return sqlText
     .split('\n')
     .map(line => {

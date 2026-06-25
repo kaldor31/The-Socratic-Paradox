@@ -1,0 +1,57 @@
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700&family=Cinzel+Decorative:wght@400;700&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Inter:wght@300;400;500;600&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    @apply bg-marble-midnight text-ink antialiased;
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply font-body min-h-screen;
+    background-image: theme('backgroundImage.vellum'), theme('backgroundImage.stain');
+  }
+
+  h1, h2, h3, h4 {
+    @apply font-serif tracking-wide;
+  }
+
+  ::selection {
+    @apply bg-accent-gold/30 text-ink;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl px-6 py-3 font-serif font-semibold text-marble-midnight transition-all;
+    @apply bg-accent-gold border border-accent-gold/80;
+    @apply shadow-glow-gold hover:bg-parchment hover:scale-[1.02] hover:shadow-glow-rust;
+  }
+
+  .btn-secondary {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl px-6 py-3 font-serif font-medium text-ink transition-all;
+    @apply border border-marble-600 bg-marble-800/60 hover:bg-marble-700 hover:border-accent-gold/60;
+  }
+
+  .panel {
+    @apply rounded-2xl border border-marble-700 bg-marble-800/80 p-6 shadow-panel backdrop-blur-sm;
+  }
+
+  .input-field {
+    @apply w-full rounded-xl border border-marble-600 bg-marble-900 px-4 py-3 text-ink font-body placeholder-ink-dim;
+    @apply focus:border-accent-gold focus:outline-none focus:ring-2 focus:ring-accent-gold/30;
+  }
+
+  .text-gradient {
+    @apply bg-gradient-to-r from-accent-rust via-accent-gold to-accent-patina bg-clip-text text-transparent;
+  }
+}
+
+@layer utilities {
+  .glow-text {
+    text-shadow: 0 0 18px rgba(199, 166, 99, 0.45);
+  }
+}

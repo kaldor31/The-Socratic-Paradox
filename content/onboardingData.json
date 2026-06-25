@@ -1,0 +1,38 @@
+{
+  "title": "The Socratic Paradox",
+  "subtitle": "An interactive cognitive journal for the examined life.",
+  "steps": [
+    {
+      "id": "maieutics",
+      "title": "Maieutics",
+      "heading": "The Art of Giving Birth to Insight",
+      "body": "Socrates called himself a midwife of ideas. Maieutics is the disciplined conversation that helps you discover what you already know, by stripping away assumptions and confronting the logic beneath your thoughts. This journal does not lecture you; it asks.",
+      "quote": "I know that I know nothing.",
+      "quoteAuthor": "Socrates"
+    },
+    {
+      "id": "distortions",
+      "title": "Cognitive Distortions",
+      "heading": "The Traps of Automatic Thinking",
+      "body": "Our minds generate shortcuts. Sometimes those shortcuts become habits that color reality in darker, sharper hues than it deserves. By naming a distortion—catastrophizing, mind reading, all-or-nothing thinking—you gain the first distance required to question it.",
+      "quote": "The mind is its own place, and in itself can make a heaven of hell, a hell of heaven.",
+      "quoteAuthor": "John Milton"
+    },
+    {
+      "id": "socratic-loop",
+      "title": "The Socratic Loop",
+      "heading": "Thesis · Interrogation · Synthesis",
+      "body": "Every entry follows a four-step arc: you state a raw thought (thesis), answer probing questions (interrogation), tag the distortions that surfaced, and conclude with a rational synthesis. The loop is not a test; it is a ritual of clarity.",
+      "quote": "An unexamined thought is not worth keeping.",
+      "quoteAuthor": "The Socratic Paradox"
+    }
+  ],
+  "wizardIntro": {
+    "title": "Begin the Examination",
+    "body": "Write the thought as it first arrives. Do not edit it into respectability. The rougher the thesis, the more honest the dialogue that follows."
+  },
+  "cta": {
+    "primary": "Start a New Session",
+    "secondary": "Browse the Library of Distortions"
+  }
+}

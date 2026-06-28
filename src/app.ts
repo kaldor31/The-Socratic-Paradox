@@ -27,8 +27,8 @@ app.get('/health', async (_req, res) => {
   res.status(dbOk ? 200 : 503).json({ ok: dbOk, service: 'the-socratic-paradox' });
 });
 
-app.use('/api', entriesRouter);
 app.use('/api', authRouter);
+app.use('/api', entriesRouter);
 
 app.use((_req, res) => {
   res.status(404).json({ ok: false, error: 'Not found' });

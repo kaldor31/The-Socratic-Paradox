@@ -78,7 +78,7 @@ export function CalendarPicker({ value, onChange, maxDate, locale }: CalendarPic
         <span className="sm:hidden">{value}</span>
       </button>
       {open && (
-        <div className="absolute left-0 top-full z-50 mt-2 w-72 rounded-2xl border border-marble-700 bg-marble-800 p-4 shadow-panel">
+        <div className="absolute left-1/2 top-full z-50 mt-2 w-72 max-w-[calc(100vw-2rem)] -translate-x-1/2 rounded-2xl border border-marble-700 bg-marble-800 p-4 shadow-panel sm:left-0 sm:translate-x-0">
           <div className="mb-3 flex items-center justify-between">
             <button onClick={() => shiftMonth(-1)} className="btn-secondary p-2">
               <ChevronLeft size={18} />
@@ -106,7 +106,7 @@ export function CalendarPicker({ value, onChange, maxDate, locale }: CalendarPic
                   key={day}
                   disabled={isDisabled}
                   onClick={() => handleDayClick(day)}
-                  className={`rounded-lg py-1.5 text-sm transition-colors ${
+                  className={`min-h-[2.25rem] rounded-lg py-1.5 text-sm transition-colors ${
                     isSelected
                       ? 'bg-accent-gold font-semibold text-marble-midnight'
                       : isDisabled

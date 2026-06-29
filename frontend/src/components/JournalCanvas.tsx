@@ -111,8 +111,9 @@ export const JournalCanvas = forwardRef<JournalCanvasRef, JournalCanvasProps>(
       const canvas = canvasRef.current;
       if (!canvas) return { x: 0, y: 0 };
       const rect = canvas.getBoundingClientRect();
-      const clientX = 'touches' in e ? e.touches[0]?.clientX : e.clientX;
-      const clientY = 'touches' in e ? e.touches[0]?.clientY : e.clientY;
+      const touch = 'touches' in e ? (e.touches[0] ?? e.changedTouches[0]) : undefined;
+      const clientX = touch ? touch.clientX : (e as MouseEvent).clientX;
+      const clientY = touch ? touch.clientY : (e as MouseEvent).clientY;
       const x = ((clientX - rect.left) / rect.width) * CANVAS_WIDTH;
       const y = ((clientY - rect.top) / rect.height) * CANVAS_HEIGHT;
       return { x, y };

@@ -1,16 +1,26 @@
 import { Check, ArrowRight } from 'lucide-react';
+import { useRef } from 'react';
 import { useLanguage } from '../i18n/LanguageContext';
+import { JournalCanvas, JournalCanvasRef } from './JournalCanvas';
 
 interface SynthesisStepProps {
+  entryId: string;
   synthesis: string;
+  drawing?: string;
   thesis: string;
   onChange: (synthesis: string) => void;
-  onSubmit: (synthesis: string) => void;
+  onSubmit: (synthesis: string, drawing?: string) => void;
   canAdvance: boolean;
 }
 
-export function SynthesisStep({ synthesis, thesis, onChange, onSubmit, canAdvance }: SynthesisStepProps) {
+export function SynthesisStep({ entryId, synthesis, drawing, thesis, onChange, onSubmit, canAdvance }: SynthesisStepProps) {
   const { t } = useLanguage();
+  const canvasRef = useRef<JournalCanvasRef>(null);
+
+  const handleSubmit = () => {
+    const canvasDrawing = canvasRef.current?.hasDrawing() ? canvasRef.current.getDataUrl() : undefined;
+    onSubmit(synthesis, canvasDrawing);
+  };
 
   return (
     <div className="panel">
@@ -29,8 +39,17 @@ export function SynthesisStep({ synthesis, thesis, onChange, onSubmit, canAdvanc
         className="input-field mt-6 min-h-[180px] font-serif text-lg"
       />
 
+      <div className="mt-8">
+        <p className="mb-3 text-sm font-medium text-ink-muted">{t('wizard.synthesisCanvasHint')}</p>
+        <JournalCanvas
+          ref={canvasRef}
+          initialDrawing={drawing}
+          storageKey={entryId ? `sp-synthesis-drawing-${entryId}` : undefined}
+        />
+      </div>
+
       <div className="mt-6 flex justify-end">
-        <button onClick={() => onSubmit(synthesis)} disabled={!canAdvance} className="btn-primary disabled:opacity-50">
+        <button onClick={handleSubmit} disabled={!canAdvance} className="btn-primary disabled:opacity-50">
           <Check size={18} />
           {t('wizard.complete')}
           <ArrowRight size={18} />

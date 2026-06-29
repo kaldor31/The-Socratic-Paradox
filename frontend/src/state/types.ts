@@ -41,6 +41,7 @@ export interface WizardSession {
   answers: Record<string, string>;
   distortions: DistortionOption[];
   synthesis: string;
+  synthesisDrawing?: string;
 }
 
 export interface WizardState {
@@ -63,6 +64,7 @@ export type WizardAction =
   | { type: 'SET_LOADING'; payload: boolean }
   | { type: 'SET_ERROR'; payload: string }
   | { type: 'INIT_SESSION'; payload: WizardSession }
+  | { type: 'UPDATE_SESSION'; payload: WizardSession }
   | { type: 'SET_THESIS'; payload: string }
   | { type: 'SET_ANSWER'; payload: { questionId: string; answer: string } }
   | { type: 'ADVANCE_TO_INTERROGATION'; payload: WizardSession }

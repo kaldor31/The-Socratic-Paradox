@@ -4,7 +4,7 @@ import { useAuth } from '../auth/AuthContext';
 import { useLanguage } from '../i18n/LanguageContext';
 import { useConfirm } from './ConfirmDialog';
 
-type View = 'onboarding' | 'quotes' | 'wizard' | 'dashboard' | 'entries' | 'journal' | 'account' | 'settings' | 'auth';
+type View = 'onboarding' | 'quotes' | 'wizard' | 'dashboard' | 'entries' | 'journal' | 'account' | 'settings' | 'auth' | 'entryDetail';
 
 interface LayoutProps {
   activeView: View;
@@ -132,65 +132,85 @@ export function Layout({ activeView, onNavigate, onOpenAuth, children }: LayoutP
         </div>
       </nav>
 
-      {menuOpen && (
-        <div className="fixed inset-0 z-50 sm:hidden">
-          <div className="absolute inset-0 bg-black/60" onClick={() => setMenuOpen(false)} />
-          <div className="absolute right-0 top-0 h-full w-[min(20rem,85vw)] bg-marble-900 p-4 shadow-xl">
-            <div className="flex items-center justify-between">
-              <span className="font-serif text-lg font-bold text-gradient">Menu</span>
+      <div
+        className={`fixed inset-0 z-50 sm:hidden transition-opacity duration-300 ${
+          menuOpen ? 'pointer-events-auto opacity-100' : 'pointer-events-none opacity-0'
+        }`}
+      >
+        <div
+          className={`absolute inset-0 bg-black/60 transition-opacity duration-300 ${
+            menuOpen ? 'opacity-100' : 'opacity-0'
+          }`}
+          onClick={() => setMenuOpen(false)}
+        />
+        <div
+          className={`absolute right-0 top-0 h-full w-[min(20rem,85vw)] bg-marble-900 p-4 shadow-xl transition-transform duration-300 ease-out ${
+            menuOpen ? 'translate-x-0' : 'translate-x-full'
+          }`}
+        >
+          <div className="flex items-center justify-between">
+            <span className="font-serif text-lg font-bold text-gradient">{t('nav.menu')}</span>
+            <button
+              onClick={() => setMenuOpen(false)}
+              className="flex h-9 w-9 items-center justify-center rounded-lg text-ink transition-colors hover:bg-marble-800"
+              aria-label={t('common.close')}
+            >
+              <X size={22} />
+            </button>
+          </div>
+          <div className="mt-6 flex flex-col gap-2">
+            {menuItems.map((item, index) => {
+              const Icon = item.icon;
+              const active = activeView === item.id;
+              return (
+                <button
+                  key={item.id}
+                  onClick={() => handleNavigate(item.id)}
+                  style={{ transitionDelay: menuOpen ? `${index * 40}ms` : '0ms' }}
+                  className={`flex items-center gap-3 rounded-lg px-3 py-3 text-left text-sm font-medium transition-all duration-300 ${
+                    menuOpen ? 'translate-x-0 opacity-100' : 'translate-x-4 opacity-0'
+                  } ${
+                    active
+                      ? 'bg-marble-800 text-white shadow-glow-gold'
+                      : 'text-ink-muted hover:bg-marble-800/60 hover:text-ink'
+                  }`}
+                >
+                  <Icon size={18} />
+                  {item.label}
+                </button>
+              );
+            })}
+            {isAuthenticated ? (
               <button
-                onClick={() => setMenuOpen(false)}
-                className="flex h-9 w-9 items-center justify-center rounded-lg text-ink hover:bg-marble-800"
-                aria-label={t('common.close')}
+                onClick={() => {
+                  setMenuOpen(false);
+                  handleLogout();
+                }}
+                style={{ transitionDelay: menuOpen ? `${menuItems.length * 40}ms` : '0ms' }}
+                className={`flex items-center gap-3 rounded-lg px-3 py-3 text-left text-sm font-medium text-ink-muted transition-all duration-300 hover:bg-marble-800/60 hover:text-red-400 ${
+                  menuOpen ? 'translate-x-0 opacity-100' : 'translate-x-4 opacity-0'
+                }`}
               >
-                <X size={22} />
+                <span className="h-4 w-4" />
+                {t('nav.signOut')}
               </button>
-            </div>
-            <div className="mt-6 flex flex-col gap-2">
-              {menuItems.map(item => {
-                const Icon = item.icon;
-                const active = activeView === item.id;
-                return (
-                  <button
-                    key={item.id}
-                    onClick={() => handleNavigate(item.id)}
-                    className={`flex items-center gap-3 rounded-lg px-3 py-3 text-left text-sm font-medium transition-all ${
-                      active
-                        ? 'bg-marble-800 text-white shadow-glow-gold'
-                        : 'text-ink-muted hover:bg-marble-800/60 hover:text-ink'
-                    }`}
-                  >
-                    <Icon size={18} />
-                    {item.label}
-                  </button>
-                );
-              })}
-              {isAuthenticated ? (
-                <button
-                  onClick={() => {
-                    setMenuOpen(false);
-                    handleLogout();
-                  }}
-                  className="flex items-center gap-3 rounded-lg px-3 py-3 text-left text-sm font-medium text-ink-muted transition-all hover:bg-marble-800/60 hover:text-red-400"
-                >
-                  <span className="h-4 w-4" />
-                  {t('nav.signOut')}
-                </button>
-              ) : (
-                <button
-                  onClick={() => {
-                    setMenuOpen(false);
-                    onOpenAuth();
-                  }}
-                  className="btn-primary mt-2 text-sm"
-                >
-                  {t('nav.signIn')}
-                </button>
-              )}
-            </div>
+            ) : (
+              <button
+                onClick={() => {
+                  setMenuOpen(false);
+                  onOpenAuth();
+                }}
+                style={{ transitionDelay: menuOpen ? `${menuItems.length * 40}ms` : '0ms' }}
+                className={`btn-primary mt-2 text-sm transition-all duration-300 ${
+                  menuOpen ? 'translate-x-0 opacity-100' : 'translate-x-4 opacity-0'
+                }`}
+              >
+                {t('nav.signIn')}
+              </button>
+            )}
           </div>
         </div>
-      )}
+      </div>
 
       <main className="mx-auto max-w-6xl px-3 pb-[calc(1.5rem+env(safe-area-inset-bottom))] pt-4 sm:px-4 sm:pb-[calc(2rem+env(safe-area-inset-bottom))] sm:pt-8">{children}</main>
     </div>

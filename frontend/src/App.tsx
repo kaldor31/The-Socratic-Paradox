@@ -9,10 +9,11 @@ import { Account } from './components/Account';
 import { Settings } from './components/Settings';
 import { Journal } from './components/Journal';
 import { Quotes } from './components/Quotes';
+import { EntryDetail } from './components/EntryDetail';
 import { useAuth } from './auth/AuthContext';
 import { useEncryption } from './auth/EncryptionContext';
 
-type View = 'onboarding' | 'quotes' | 'wizard' | 'dashboard' | 'entries' | 'journal' | 'account' | 'settings' | 'auth';
+type View = 'onboarding' | 'quotes' | 'wizard' | 'dashboard' | 'entries' | 'journal' | 'account' | 'settings' | 'auth' | 'entryDetail';
 
 const protectedViews: View[] = ['wizard', 'dashboard', 'entries', 'journal', 'account', 'settings', 'quotes'];
 
@@ -31,6 +32,7 @@ function App() {
   const [view, setView] = useState<View>(isAuthenticated ? 'journal' : 'onboarding');
   const [showAuth, setShowAuth] = useState(false);
   const [resumeEntryId, setResumeEntryId] = useState<string | null>(null);
+  const [viewingEntryId, setViewingEntryId] = useState<string | null>(null);
 
   useEffect(() => {
     if (showAuth) {
@@ -87,6 +89,7 @@ function App() {
 
   return (
     <Layout activeView={view} onNavigate={handleNavigate} onOpenAuth={() => setShowAuth(true)}>
+      <div key={view} className="animate-fade-in-up">
       {view === 'onboarding' && (
         <Onboarding onStart={() => {
           setResumeEntryId(null);
@@ -98,14 +101,27 @@ function App() {
       {view === 'wizard' && user && (
         <Wizard
           entryId={resumeEntryId ?? undefined}
-          onFinish={() => setView('dashboard')}
+          onFinish={(entryId) => {
+            setViewingEntryId(entryId);
+            setView('entryDetail');
+          }}
         />
       )}
       {view === 'dashboard' && user && (
         <Dashboard onNewEntry={() => { setResumeEntryId(null); setView('wizard'); }} onEntries={() => setView('entries')} />
       )}
       {view === 'entries' && user && (
-        <EntryList onResume={(entryId) => { setResumeEntryId(entryId); setView('wizard'); }} />
+        <EntryList
+          onResume={(entryId) => { setResumeEntryId(entryId); setView('wizard'); }}
+          onView={(entryId) => { setViewingEntryId(entryId); setView('entryDetail'); }}
+        />
+      )}
+      {view === 'entryDetail' && viewingEntryId && user && (
+        <EntryDetail
+          entryId={viewingEntryId}
+          onBack={() => { setViewingEntryId(null); setView('entries'); }}
+          onEdit={(entryId) => { setResumeEntryId(entryId); setView('wizard'); }}
+        />
       )}
       {view === 'journal' && user && (
         <Journal />
@@ -113,6 +129,7 @@ function App() {
       {view === 'auth' && <Auth onClose={handleCloseAuth} />}
       {view === 'account' && user && <Account onOpenSettings={() => setView('settings')} />}
       {view === 'settings' && user && <Settings />}
+      </div>
     </Layout>
   );
 }

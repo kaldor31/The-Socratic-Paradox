@@ -21,7 +21,7 @@ import {
 
 interface WizardProps {
   entryId?: string;
-  onFinish: () => void;
+  onFinish: (entryId: string) => void;
 }
 
 interface SocraticCatalog {
@@ -52,7 +52,7 @@ export function Wizard({ entryId, onFinish }: WizardProps) {
     async (entry: EncryptedEntry): Promise<WizardSession> => {
       const cat = catalogRef.current;
       if (!cat) throw new Error('Socratic catalog not loaded');
-      const [thesis, interrogationStr, distortionAnalysisStr, synthesis] = await Promise.all([
+      const [thesis, interrogationStr, distortionAnalysisStr, synthesisRaw] = await Promise.all([
         decrypt(entry.thesis),
         entry.interrogation ? decrypt(entry.interrogation) : Promise.resolve(''),
         entry.distortionAnalysis ? decrypt(entry.distortionAnalysis) : Promise.resolve(''),
@@ -60,6 +60,21 @@ export function Wizard({ entryId, onFinish }: WizardProps) {
       ]);
       const interrogation: InterrogationItem[] = interrogationStr ? JSON.parse(interrogationStr) : [];
       const distortionAnalysis: DistortionAnalysisItem[] = distortionAnalysisStr ? JSON.parse(distortionAnalysisStr) : [];
+      let synthesis = '';
+      let synthesisDrawing: string | undefined;
+      if (synthesisRaw) {
+        try {
+          const parsed = JSON.parse(synthesisRaw);
+          if (parsed && typeof parsed === 'object') {
+            synthesis = parsed.text || '';
+            synthesisDrawing = parsed.drawing;
+          } else {
+            synthesis = synthesisRaw;
+          }
+        } catch {
+          synthesis = synthesisRaw;
+        }
+      }
       const answers = buildAnswers(interrogation);
       const questions = selectPrompts(cat.prompts, thesis);
       const distortions = buildDistortionOptions(distortionAnalysis, cat.distortions);
@@ -71,6 +86,7 @@ export function Wizard({ entryId, onFinish }: WizardProps) {
         answers,
         distortions,
         synthesis,
+        synthesisDrawing,
       };
     },
     [decrypt]
@@ -94,6 +110,9 @@ export function Wizard({ entryId, onFinish }: WizardProps) {
         setCatalog(newCatalog);
         if (sessionRes) {
           const session = await decryptEntry(sessionRes.entry);
+          if (sessionRes.entry.status === 'synthesis') {
+            localStorage.removeItem(`sp-synthesis-drawing-${sessionRes.entry.id}`);
+          }
           dispatch(WizardActions.initSession({ ...session, synthesis: session.synthesis || '' }));
         } else {
           dispatch(WizardActions.setLoading(false));
@@ -129,7 +148,7 @@ export function Wizard({ entryId, onFinish }: WizardProps) {
   };
 
   const handleInterrogationSubmit = async () => {
-    if (state.session.status === 'distortions' || state.session.status === 'synthesis') {
+    if (state.session.status === 'synthesis') {
       dispatch(WizardActions.setStep('distortions'));
       return;
     }
@@ -143,8 +162,13 @@ export function Wizard({ entryId, onFinish }: WizardProps) {
         interrogation: encryptedInterrogation,
       });
       const session = await decryptEntry(entry);
-      const suggested = suggestDistortions(session.thesis, interrogation, catalog.distortions);
-      dispatch(WizardActions.advanceToDistortions({ ...session, distortions: suggested }));
+      if (state.session.status === 'distortions') {
+        dispatch(WizardActions.updateSession(session));
+        dispatch(WizardActions.setStep('distortions'));
+      } else {
+        const suggested = suggestDistortions(session.thesis, interrogation, catalog.distortions);
+        dispatch(WizardActions.advanceToDistortions({ ...session, distortions: suggested }));
+      }
     } catch (err) {
       handleError(err);
     } finally {
@@ -188,16 +212,17 @@ export function Wizard({ entryId, onFinish }: WizardProps) {
     }
   };
 
-  const handleSynthesisSubmit = async (synthesis: string) => {
+  const handleSynthesisSubmit = async (synthesis: string, drawing?: string) => {
     dispatch(WizardActions.setLoading(true));
     try {
-      const encryptedSynthesis = await encrypt(synthesis);
+      const payload = JSON.stringify({ text: synthesis, drawing });
+      const encryptedSynthesis = await encrypt(payload);
       await api.submitSynthesis({
         entryId: state.session.entryId,
         synthesis: encryptedSynthesis,
       });
-      dispatch(WizardActions.complete({ ...state.session, synthesis }));
-      onFinish();
+      dispatch(WizardActions.complete({ ...state.session, synthesis, synthesisDrawing: drawing }));
+      onFinish(state.session.entryId);
     } catch (err) {
       handleError(err);
     } finally {
@@ -286,7 +311,9 @@ export function Wizard({ entryId, onFinish }: WizardProps) {
           )}
           {state.step === 'synthesis' && (
             <SynthesisStep
+              entryId={state.session.entryId}
               synthesis={state.session.synthesis}
+              drawing={state.session.synthesisDrawing}
               thesis={state.session.thesis}
               onChange={synthesis => dispatch(WizardActions.setSynthesis(synthesis))}
               onSubmit={handleSynthesisSubmit}

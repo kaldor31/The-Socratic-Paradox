@@ -10,6 +10,7 @@ export const initialWizardState: WizardState = {
     answers: {},
     distortions: [],
     synthesis: '',
+    synthesisDrawing: undefined,
   },
   isLoading: false,
   error: null,
@@ -35,6 +36,14 @@ export function wizardReducer(state: WizardState, action: WizardAction): WizardS
         error: null,
         step: action.payload.status,
         session: action.payload,
+      };
+
+    case 'UPDATE_SESSION':
+      return {
+        ...state,
+        isLoading: false,
+        error: null,
+        session: { ...state.session, ...action.payload },
       };
 
     case 'SET_THESIS':
@@ -163,6 +172,10 @@ export const WizardActions = {
   setError: (error: string): WizardAction => ({ type: 'SET_ERROR', payload: error }),
   initSession: (session: WizardState['session']): WizardAction => ({
     type: 'INIT_SESSION',
+    payload: session,
+  }),
+  updateSession: (session: WizardState['session']): WizardAction => ({
+    type: 'UPDATE_SESSION',
     payload: session,
   }),
   setThesis: (thesis: string): WizardAction => ({ type: 'SET_THESIS', payload: thesis }),

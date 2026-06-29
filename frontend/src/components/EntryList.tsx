@@ -17,9 +17,10 @@ interface EntryView {
 
 interface EntryListProps {
   onResume: (entryId: string) => void;
+  onView: (entryId: string) => void;
 }
 
-export function EntryList({ onResume }: EntryListProps) {
+export function EntryList({ onResume, onView }: EntryListProps) {
   const { t, language } = useLanguage();
   const { decrypt } = useCrypto();
   const [entries, setEntries] = useState<EntryView[]>([]);
@@ -112,9 +113,15 @@ export function EntryList({ onResume }: EntryListProps) {
                 </div>
               </div>
               <div className="flex items-center gap-2">
-                <button onClick={() => onResume(entry.id)} className="btn-secondary text-xs">
-                  {t('entries.resume')}
-                </button>
+                {entry.status === 'synthesis' ? (
+                  <button onClick={() => onView(entry.id)} className="btn-secondary text-xs">
+                    {t('entries.view')}
+                  </button>
+                ) : (
+                  <button onClick={() => onResume(entry.id)} className="btn-secondary text-xs">
+                    {t('entries.resume')}
+                  </button>
+                )}
                 <button
                   onClick={() => handleDelete(entry.id)}
                   disabled={deletingId === entry.id}

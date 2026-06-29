@@ -116,7 +116,7 @@ export function EntryDetail({ entryId, onBack, onEdit, onDelete }: EntryDetailPr
     return () => {
       cancelled = true;
     };
-  }, [entryId, decrypt, t]);
+  }, [entryId, decrypt, t, language]);
 
   const handleDelete = async () => {
     if (!onDelete) return;
@@ -243,10 +243,20 @@ export function EntryDetail({ entryId, onBack, onEdit, onDelete }: EntryDetailPr
               <div key={d.id} className="rounded-xl border border-marble-700 bg-marble-900/50 p-4">
                 <div className="flex items-center gap-2">
                   <span className="h-2 w-2 rounded-full" style={{ backgroundColor: d.colorAccent }} />
-                  <span className="font-medium text-ink">{d.label}</span>
+                  <span className="font-medium text-ink">
+                    {tDynamic(`distortions.${d.slug}.label`, language) ?? d.label}
+                  </span>
                   <span className="ml-auto text-sm text-ink-dim">{d.confidence}%</span>
                 </div>
-                {d.evidence && <p className="mt-2 text-sm text-ink-muted">{d.evidence}</p>}
+                <p className="mt-1 text-sm text-ink-muted">
+                  {tDynamic(`distortions.${d.slug}.description`, language) ?? d.description}
+                </p>
+                {d.evidence.trim() && (
+                  <div className="mt-3 rounded-lg border border-marble-700 bg-marble-900/50 p-3">
+                    <p className="text-xs uppercase tracking-wider text-ink-dim">{t('wizard.evidence')}</p>
+                    <p className="mt-1 text-sm text-ink-muted">{d.evidence}</p>
+                  </div>
+                )}
               </div>
             ))}
           </div>

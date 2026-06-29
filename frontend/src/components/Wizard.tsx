@@ -148,10 +148,6 @@ export function Wizard({ entryId, onFinish }: WizardProps) {
   };
 
   const handleInterrogationSubmit = async () => {
-    if (state.session.status === 'synthesis') {
-      dispatch(WizardActions.setStep('distortions'));
-      return;
-    }
     dispatch(WizardActions.setLoading(true));
     try {
       if (!catalog) throw new Error('Socratic catalog not loaded');
@@ -162,7 +158,7 @@ export function Wizard({ entryId, onFinish }: WizardProps) {
         interrogation: encryptedInterrogation,
       });
       const session = await decryptEntry(entry);
-      if (state.session.status === 'distortions') {
+      if (state.session.status === 'distortions' || state.session.status === 'synthesis') {
         dispatch(WizardActions.updateSession(session));
         dispatch(WizardActions.setStep('distortions'));
       } else {
@@ -177,10 +173,6 @@ export function Wizard({ entryId, onFinish }: WizardProps) {
   };
 
   const handleDistortionsSubmit = async () => {
-    if (state.session.status === 'synthesis') {
-      dispatch(WizardActions.setStep('synthesis'));
-      return;
-    }
     dispatch(WizardActions.setLoading(true));
     try {
       if (!catalog) throw new Error('Socratic catalog not loaded');
@@ -205,6 +197,7 @@ export function Wizard({ entryId, onFinish }: WizardProps) {
       });
       const session = await decryptEntry(entry);
       dispatch(WizardActions.complete(session));
+      dispatch(WizardActions.setStep('synthesis'));
     } catch (err) {
       handleError(err);
     } finally {

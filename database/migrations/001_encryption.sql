@@ -15,4 +15,7 @@ ALTER TABLE journal_entries
   ALTER COLUMN answers TYPE TEXT USING COALESCE(answers::text, ''),
   ALTER COLUMN drawing TYPE TEXT;
 
+DROP INDEX IF EXISTS idx_entries_interrogation_gin;
+DROP INDEX IF EXISTS idx_entries_distortion_analysis_gin;
+
 COMMIT;

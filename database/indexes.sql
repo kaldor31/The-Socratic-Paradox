@@ -26,12 +26,9 @@ CREATE INDEX IF NOT EXISTS idx_entry_distortions_distortion_id
 CREATE INDEX IF NOT EXISTS idx_entry_distortions_entry_id
     ON entry_distortions(entry_id);
 
--- GIN indexes for JSONB interrogation snapshots
-CREATE INDEX IF NOT EXISTS idx_entries_interrogation_gin
-    ON entries USING GIN (interrogation jsonb_path_ops);
-
-CREATE INDEX IF NOT EXISTS idx_entries_distortion_analysis_gin
-    ON entries USING GIN (distortion_analysis jsonb_path_ops);
+-- Legacy GIN indexes were used on JSONB snapshots; data is now encrypted TEXT
+DROP INDEX IF EXISTS idx_entries_interrogation_gin;
+DROP INDEX IF EXISTS idx_entries_distortion_analysis_gin;
 
 -- Prompt lookup by category
 CREATE INDEX IF NOT EXISTS idx_socratic_prompts_category

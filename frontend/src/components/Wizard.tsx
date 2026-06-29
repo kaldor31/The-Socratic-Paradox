@@ -1,4 +1,4 @@
-import { useReducer, useCallback, useEffect, useState } from 'react';
+import { useReducer, useCallback, useEffect, useState, useRef } from 'react';
 import { Loader2 } from 'lucide-react';
 import { wizardReducer, initialWizardState, WizardActions, canAdvance, isStepAccessible } from '../state/wizardMachine';
 import { api } from '../api/client';
@@ -38,6 +38,7 @@ export function Wizard({ entryId, onFinish }: WizardProps) {
   const { encrypt, decrypt } = useCrypto();
   const [state, dispatch] = useReducer(wizardReducer, initialWizardState);
   const [catalog, setCatalog] = useState<SocraticCatalog | null>(null);
+  const catalogRef = useRef<SocraticCatalog | null>(null);
 
   const handleError = useCallback(
     (err: unknown) => {
@@ -49,7 +50,8 @@ export function Wizard({ entryId, onFinish }: WizardProps) {
 
   const decryptEntry = useCallback(
     async (entry: EncryptedEntry): Promise<WizardSession> => {
-      if (!catalog) throw new Error('Socratic catalog not loaded');
+      const cat = catalogRef.current;
+      if (!cat) throw new Error('Socratic catalog not loaded');
       const [thesis, interrogationStr, distortionAnalysisStr, synthesis] = await Promise.all([
         decrypt(entry.thesis),
         entry.interrogation ? decrypt(entry.interrogation) : Promise.resolve(''),
@@ -59,8 +61,8 @@ export function Wizard({ entryId, onFinish }: WizardProps) {
       const interrogation: InterrogationItem[] = interrogationStr ? JSON.parse(interrogationStr) : [];
       const distortionAnalysis: DistortionAnalysisItem[] = distortionAnalysisStr ? JSON.parse(distortionAnalysisStr) : [];
       const answers = buildAnswers(interrogation);
-      const questions = selectPrompts(catalog.prompts, thesis);
-      const distortions = buildDistortionOptions(distortionAnalysis, catalog.distortions);
+      const questions = selectPrompts(cat.prompts, thesis);
+      const distortions = buildDistortionOptions(distortionAnalysis, cat.distortions);
       return {
         entryId: entry.id,
         status: entry.status,
@@ -71,7 +73,7 @@ export function Wizard({ entryId, onFinish }: WizardProps) {
         synthesis,
       };
     },
-    [catalog, decrypt]
+    [decrypt]
   );
 
   useEffect(() => {
@@ -88,6 +90,7 @@ export function Wizard({ entryId, onFinish }: WizardProps) {
           prompts: toQuestions(promptsRes.prompts),
           distortions: distortionsRes.distortions,
         };
+        catalogRef.current = newCatalog;
         setCatalog(newCatalog);
         if (sessionRes) {
           const session = await decryptEntry(sessionRes.entry);

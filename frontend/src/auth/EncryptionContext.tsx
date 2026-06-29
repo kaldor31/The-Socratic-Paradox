@@ -20,6 +20,11 @@ export function EncryptionProvider({ children }: { children: ReactNode }) {
   const dataKeyRef = useRef<CryptoKey | null>(null);
   const [isUnlocked, setIsUnlocked] = useState(false);
   const previousUserRef = useRef(user);
+  const userRef = useRef(user);
+
+  useEffect(() => {
+    userRef.current = user;
+  }, [user]);
 
   useEffect(() => {
     const stored = localStorage.getItem(STORAGE_KEY);
@@ -57,20 +62,18 @@ export function EncryptionProvider({ children }: { children: ReactNode }) {
     }
   }, [user, lock]);
 
-  const unlock = useCallback(
-    async (password: string) => {
-      if (!user?.encryptionSalt || !user?.encryptedDataKey) {
-        throw new Error('No encryption key material available');
-      }
-      const kek = await deriveKey(password, user.encryptionSalt);
-      const key = await decryptKey(user.encryptedDataKey, kek);
-      dataKeyRef.current = key;
-      setIsUnlocked(true);
-      const raw = await exportKey(key);
-      localStorage.setItem(STORAGE_KEY, raw);
-    },
-    [user]
-  );
+  const unlock = useCallback(async (password: string) => {
+    const currentUser = userRef.current;
+    if (!currentUser?.encryptionSalt || !currentUser?.encryptedDataKey) {
+      throw new Error('No encryption key material available');
+    }
+    const kek = await deriveKey(password, currentUser.encryptionSalt);
+    const key = await decryptKey(currentUser.encryptedDataKey, kek);
+    dataKeyRef.current = key;
+    setIsUnlocked(true);
+    const raw = await exportKey(key);
+    localStorage.setItem(STORAGE_KEY, raw);
+  }, []);
 
   const getDataKey = useCallback(() => dataKeyRef.current, []);
 

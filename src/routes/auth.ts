@@ -12,15 +12,13 @@ const isProduction = process.env.NODE_ENV === 'production';
 
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 20,
+  max: 100,
   standardHeaders: true,
   legacyHeaders: false,
   handler: (_req, res) => {
     res.status(429).json({ ok: false, error: 'Too many requests. Please try again later.' });
   },
 });
-
-router.use(authLimiter);
 
 function setAuthCookies(res: Response, tokens: AuthTokens) {
   const options = {
@@ -90,7 +88,7 @@ const handleSchema = z.object({
   handle: z.string().min(3).max(32),
 });
 
-router.get('/auth/key', async (req: Request, res: Response, next: NextFunction) => {
+router.get('/auth/key', authLimiter, async (req: Request, res: Response, next: NextFunction) => {
   try {
     const email = z.string().email().parse(req.query.email);
     const user = await userRepository.findByEmail(email.toLowerCase().trim());
@@ -105,7 +103,7 @@ router.get('/auth/key', async (req: Request, res: Response, next: NextFunction) 
   }
 });
 
-router.post('/auth/register', async (req: Request, res: Response, next: NextFunction) => {
+router.post('/auth/register', authLimiter, async (req: Request, res: Response, next: NextFunction) => {
   try {
     const dto = registerSchema.parse(req.body);
     const result = await authService.register(dto);
@@ -115,7 +113,7 @@ router.post('/auth/register', async (req: Request, res: Response, next: NextFunc
   }
 });
 
-router.post('/auth/verify', async (req: Request, res: Response, next: NextFunction) => {
+router.post('/auth/verify', authLimiter, async (req: Request, res: Response, next: NextFunction) => {
   try {
     const dto = verifySchema.parse(req.body);
     const result = await authService.verify(dto);
@@ -129,7 +127,7 @@ router.post('/auth/verify', async (req: Request, res: Response, next: NextFuncti
   }
 });
 
-router.post('/auth/login', async (req: Request, res: Response, next: NextFunction) => {
+router.post('/auth/login', authLimiter, async (req: Request, res: Response, next: NextFunction) => {
   try {
     const dto = loginSchema.parse(req.body);
     const result = await authService.login(dto);
@@ -143,7 +141,7 @@ router.post('/auth/login', async (req: Request, res: Response, next: NextFunctio
   }
 });
 
-router.post('/auth/forgot-password', async (req: Request, res: Response, next: NextFunction) => {
+router.post('/auth/forgot-password', authLimiter, async (req: Request, res: Response, next: NextFunction) => {
   try {
     const dto = forgotSchema.parse(req.body);
     const result = await authService.forgotPassword(dto);
@@ -153,7 +151,7 @@ router.post('/auth/forgot-password', async (req: Request, res: Response, next: N
   }
 });
 
-router.post('/auth/reset-password', async (req: Request, res: Response, next: NextFunction) => {
+router.post('/auth/reset-password', authLimiter, async (req: Request, res: Response, next: NextFunction) => {
   try {
     const dto = resetSchema.parse(req.body);
     const result = await authService.resetPassword(dto);

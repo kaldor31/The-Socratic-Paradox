@@ -7,6 +7,7 @@ import { json } from 'express';
 
 import { dbHealth } from './db.js';
 import entriesRouter from './routes/entries.js';
+import journalRouter from './routes/journal.js';
 import authRouter from './routes/auth.js';
 import { errorHandler } from './middleware/errorHandler.js';
 
@@ -27,6 +28,7 @@ app.get('/health', async (_req, res) => {
   res.status(dbOk ? 200 : 503).json({ ok: dbOk, service: 'the-socratic-paradox' });
 });
 
+app.use('/api/journal', journalRouter);
 app.use('/api', authRouter);
 app.use('/api', entriesRouter);
 

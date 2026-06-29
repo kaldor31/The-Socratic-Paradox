@@ -21,7 +21,7 @@ app.use((req, res, next) => {
   cors({ origin, credentials: true })(req, res, next);
 });
 app.use(cookieParser());
-app.use(json({ limit: '1mb' }));
+app.use(json({ limit: '10mb' }));
 
 app.get('/health', async (_req, res) => {
   const dbOk = await dbHealth();

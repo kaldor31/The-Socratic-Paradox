@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom/client';
 import App from './App';
 import './index.css';
 import { AuthProvider } from './auth/AuthContext';
+import { EncryptionProvider } from './auth/EncryptionContext';
 import { LanguageProvider } from './i18n/LanguageContext';
 import { ConfirmProvider } from './components/ConfirmDialog';
 import { ThemeProvider } from './theme/ThemeContext';
@@ -22,13 +23,15 @@ applyInitialTheme();
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <AuthProvider>
-      <LanguageProvider>
-        <ThemeProvider>
-          <ConfirmProvider>
-            <App />
-          </ConfirmProvider>
-        </ThemeProvider>
-      </LanguageProvider>
+      <EncryptionProvider>
+        <LanguageProvider>
+          <ThemeProvider>
+            <ConfirmProvider>
+              <App />
+            </ConfirmProvider>
+          </ThemeProvider>
+        </LanguageProvider>
+      </EncryptionProvider>
     </AuthProvider>
   </React.StrictMode>
 );

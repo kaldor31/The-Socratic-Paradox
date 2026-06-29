@@ -47,6 +47,8 @@ const registerSchema = z.object({
   email: z.string().email().max(255),
   password: z.string().min(8).max(100),
   handle: z.string().min(3).max(32).optional(),
+  encryptionSalt: z.string().min(1),
+  encryptedDataKey: z.string().min(1),
 });
 
 const verifySchema = z.object({
@@ -67,6 +69,7 @@ const resetSchema = z.object({
   email: z.string().email(),
   token: z.string().length(64),
   newPassword: z.string().min(8).max(100),
+  encryptedDataKey: z.string().min(1),
 });
 
 const languageSchema = z.object({
@@ -85,6 +88,21 @@ const emailChangeConfirmSchema = z.object({
 
 const handleSchema = z.object({
   handle: z.string().min(3).max(32),
+});
+
+router.get('/auth/key', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const email = z.string().email().parse(req.query.email);
+    const user = await userRepository.findByEmail(email.toLowerCase().trim());
+    if (!user) throw new Error('User not found');
+    res.json({
+      ok: true,
+      encryptionSalt: user.encryptionSalt,
+      encryptedDataKey: user.encryptedDataKey,
+    });
+  } catch (err) {
+    next(err);
+  }
 });
 
 router.post('/auth/register', async (req: Request, res: Response, next: NextFunction) => {
@@ -225,11 +243,23 @@ router.patch('/auth/me/handle', authenticate, async (req: Request, res: Response
   }
 });
 
-function sanitizeUser(user: { id: string; email?: string | null; handle?: string | null; isAnonymous: boolean; isVerified: boolean; language: string; createdAt: string }) {
+function sanitizeUser(user: {
+  id: string;
+  email?: string | null;
+  handle?: string | null;
+  encryptionSalt?: string | null;
+  encryptedDataKey?: string | null;
+  isAnonymous: boolean;
+  isVerified: boolean;
+  language: string;
+  createdAt: string;
+}) {
   return {
     id: user.id,
     email: user.email,
     handle: user.handle,
+    encryptionSalt: user.encryptionSalt,
+    encryptedDataKey: user.encryptedDataKey,
     isAnonymous: user.isAnonymous,
     isVerified: user.isVerified,
     language: user.language,

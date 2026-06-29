@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 import { Calendar, Trash2, User, Settings, LogOut } from 'lucide-react';
-import { api, type Entry } from '../api/client';
+import { api, type EncryptedEntry } from '../api/client';
 import { useAuth } from '../auth/AuthContext';
+import { useCrypto } from '../auth/useCrypto';
 import { useLanguage } from '../i18n/LanguageContext';
 import { useConfirm } from './ConfirmDialog';
 import { tDynamic } from '../i18n/translations';
@@ -10,20 +11,38 @@ interface AccountProps {
   onOpenSettings: () => void;
 }
 
+interface EntryView {
+  id: string;
+  thesis: string;
+  status: EncryptedEntry['status'];
+  createdAt: string;
+}
+
 export function Account({ onOpenSettings }: AccountProps) {
   const { t, language } = useLanguage();
   const { user, logout } = useAuth();
-  const [entries, setEntries] = useState<Entry[]>([]);
+  const { decrypt } = useCrypto();
+  const [entries, setEntries] = useState<EntryView[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
   useEffect(() => {
     api.getEntries()
-      .then(res => setEntries(res.entries))
+      .then(async res => {
+        const views = await Promise.all(
+          res.entries.map(async entry => ({
+            id: entry.id,
+            thesis: entry.thesis ? await decrypt(entry.thesis) : '',
+            status: entry.status,
+            createdAt: entry.createdAt,
+          }))
+        );
+        setEntries(views);
+      })
       .catch(err => setError(err instanceof Error ? err.message : t('error.failedToLoadEntries')))
       .finally(() => setLoading(false));
-  }, []);
+  }, [decrypt, t]);
 
   const confirm = useConfirm();
 

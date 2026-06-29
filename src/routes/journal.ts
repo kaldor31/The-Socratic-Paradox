@@ -7,8 +7,8 @@ const router = Router();
 
 const upsertSchema = z.object({
   entryDate: z.string().date(),
-  answers: z.record(z.string()),
-  drawing: z.string().max(5_000_000).optional(),
+  answers: z.string().min(1),
+  drawing: z.string().optional(),
 });
 
 const dateParamSchema = z.object({

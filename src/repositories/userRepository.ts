@@ -9,6 +9,8 @@ function parseUser(row: Record<string, unknown>): User {
     email: (row.email as string) ?? null,
     handle: (row.handle as string) ?? null,
     passwordHash: (row.passwordHash as string) ?? null,
+    encryptionSalt: (row.encryptionSalt as string) ?? null,
+    encryptedDataKey: (row.encryptedDataKey as string) ?? null,
     isAnonymous: row.isAnonymous as boolean,
     isVerified: row.isVerified as boolean,
     verificationCode: (row.verificationCode as string) ?? null,
@@ -28,6 +30,8 @@ export interface CreateRegisteredUserDto {
   email: string;
   handle: string | null;
   passwordHash: string;
+  encryptionSalt: string;
+  encryptedDataKey: string;
   verificationCode: string;
   verificationExpiresAt: string;
 }
@@ -49,8 +53,8 @@ export class UserRepository {
 
   async createRegistered(dto: CreateRegisteredUserDto): Promise<User> {
     const rows = await this.db`
-      INSERT INTO users (email, handle, password_hash, is_anonymous, is_verified, verification_code, verification_expires_at)
-      VALUES (${dto.email}, ${dto.handle}, ${dto.passwordHash}, false, false, ${dto.verificationCode}, ${dto.verificationExpiresAt})
+      INSERT INTO users (email, handle, password_hash, encryption_salt, encrypted_data_key, is_anonymous, is_verified, verification_code, verification_expires_at)
+      VALUES (${dto.email}, ${dto.handle}, ${dto.passwordHash}, ${dto.encryptionSalt}, ${dto.encryptedDataKey}, false, false, ${dto.verificationCode}, ${dto.verificationExpiresAt})
       RETURNING *
     `;
     const row = snakeToCamel(rows)[0];
@@ -93,6 +97,15 @@ export class UserRepository {
     await this.db`
       UPDATE users
       SET password_hash = ${passwordHash},
+          updated_at = now()
+      WHERE id = ${userId}
+    `;
+  }
+
+  async updateDataKey(userId: string, encryptedDataKey: string): Promise<void> {
+    await this.db`
+      UPDATE users
+      SET encrypted_data_key = ${encryptedDataKey},
           updated_at = now()
       WHERE id = ${userId}
     `;

@@ -1,40 +1,111 @@
-import { useReducer, useCallback, useEffect } from 'react';
+import { useReducer, useCallback, useEffect, useState } from 'react';
 import { Loader2 } from 'lucide-react';
 import { wizardReducer, initialWizardState, WizardActions, canAdvance, isStepAccessible } from '../state/wizardMachine';
 import { api } from '../api/client';
+import type { EncryptedEntry } from '../api/client';
+import type { Prompt } from '../api/types';
+import { useCrypto } from '../auth/useCrypto';
 import { useLanguage } from '../i18n/LanguageContext';
 import { ThesisStep } from './ThesisStep';
 import { InterrogationStep } from './InterrogationStep';
 import { DistortionsStep } from './DistortionsStep';
 import { SynthesisStep } from './SynthesisStep';
+import type { WizardSession, Question, DistortionOption, InterrogationItem, DistortionAnalysisItem } from '../state/types';
+import {
+  selectPrompts,
+  buildAnswers,
+  buildInterrogation,
+  buildDistortionOptions,
+  suggestDistortions,
+} from '../utils/socraticLogic';
 
 interface WizardProps {
   entryId?: string;
   onFinish: () => void;
 }
 
+interface SocraticCatalog {
+  prompts: Question[];
+  distortions: DistortionOption[];
+}
+
+function toQuestions(prompts: Prompt[]): Question[] {
+  return prompts.map(p => ({ id: p.id, category: p.category, slug: p.slug, text: p.text }));
+}
+
 export function Wizard({ entryId, onFinish }: WizardProps) {
   const { t } = useLanguage();
+  const { encrypt, decrypt } = useCrypto();
   const [state, dispatch] = useReducer(wizardReducer, initialWizardState);
+  const [catalog, setCatalog] = useState<SocraticCatalog | null>(null);
+
+  const handleError = useCallback(
+    (err: unknown) => {
+      const message = err instanceof Error ? err.message : t('common.error');
+      dispatch(WizardActions.setError(message));
+    },
+    [t]
+  );
+
+  const decryptEntry = useCallback(
+    async (entry: EncryptedEntry): Promise<WizardSession> => {
+      if (!catalog) throw new Error('Socratic catalog not loaded');
+      const [thesis, interrogationStr, distortionAnalysisStr, synthesis] = await Promise.all([
+        decrypt(entry.thesis),
+        entry.interrogation ? decrypt(entry.interrogation) : Promise.resolve(''),
+        entry.distortionAnalysis ? decrypt(entry.distortionAnalysis) : Promise.resolve(''),
+        entry.synthesis ? decrypt(entry.synthesis) : Promise.resolve(''),
+      ]);
+      const interrogation: InterrogationItem[] = interrogationStr ? JSON.parse(interrogationStr) : [];
+      const distortionAnalysis: DistortionAnalysisItem[] = distortionAnalysisStr ? JSON.parse(distortionAnalysisStr) : [];
+      const answers = buildAnswers(interrogation);
+      const questions = selectPrompts(catalog.prompts, thesis);
+      const distortions = buildDistortionOptions(distortionAnalysis, catalog.distortions);
+      return {
+        entryId: entry.id,
+        status: entry.status,
+        thesis,
+        questions,
+        answers,
+        distortions,
+        synthesis,
+      };
+    },
+    [catalog, decrypt]
+  );
 
   useEffect(() => {
-    if (!entryId) return;
+    let cancelled = false;
     dispatch(WizardActions.setLoading(true));
-    api.getSession(entryId)
-      .then(({ session }) => {
-        dispatch(WizardActions.initSession({ ...session, synthesis: session.synthesis || '' }));
+    Promise.all([
+      api.getPrompts(),
+      api.getDistortions(),
+      entryId ? api.getSession(entryId) : Promise.resolve(null),
+    ])
+      .then(async ([promptsRes, distortionsRes, sessionRes]) => {
+        if (cancelled) return;
+        const newCatalog: SocraticCatalog = {
+          prompts: toQuestions(promptsRes.prompts),
+          distortions: distortionsRes.distortions,
+        };
+        setCatalog(newCatalog);
+        if (sessionRes) {
+          const session = await decryptEntry(sessionRes.entry);
+          dispatch(WizardActions.initSession({ ...session, synthesis: session.synthesis || '' }));
+        } else {
+          dispatch(WizardActions.setLoading(false));
+        }
       })
       .catch(err => {
-        const message = err instanceof Error ? err.message : t('common.error');
-        dispatch(WizardActions.setError(message));
+        if (!cancelled) handleError(err);
       })
-      .finally(() => dispatch(WizardActions.setLoading(false)));
-  }, [entryId, t]);
-
-  const handleError = useCallback((err: unknown) => {
-    const message = err instanceof Error ? err.message : t('common.error');
-    dispatch(WizardActions.setError(message));
-  }, [t]);
+      .finally(() => {
+        if (!cancelled) dispatch(WizardActions.setLoading(false));
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [entryId, handleError, decryptEntry]);
 
   const handleThesisSubmit = async (thesis: string) => {
     if (state.session.entryId) {
@@ -43,10 +114,14 @@ export function Wizard({ entryId, onFinish }: WizardProps) {
     }
     dispatch(WizardActions.setLoading(true));
     try {
-      const { session } = await api.createSession({ thesis });
+      const encryptedThesis = await encrypt(thesis);
+      const { entry } = await api.createSession({ thesis: encryptedThesis });
+      const session = await decryptEntry(entry);
       dispatch(WizardActions.advanceToInterrogation(session));
     } catch (err) {
       handleError(err);
+    } finally {
+      dispatch(WizardActions.setLoading(false));
     }
   };
 
@@ -57,13 +132,20 @@ export function Wizard({ entryId, onFinish }: WizardProps) {
     }
     dispatch(WizardActions.setLoading(true));
     try {
-      const { session } = await api.submitInterrogation({
+      if (!catalog) throw new Error('Socratic catalog not loaded');
+      const interrogation = buildInterrogation(state.session.answers, catalog.prompts);
+      const encryptedInterrogation = await encrypt(JSON.stringify(interrogation));
+      const { entry } = await api.submitInterrogation({
         entryId: state.session.entryId,
-        answers: state.session.answers,
+        interrogation: encryptedInterrogation,
       });
-      dispatch(WizardActions.advanceToDistortions(session));
+      const session = await decryptEntry(entry);
+      const suggested = suggestDistortions(session.thesis, interrogation, catalog.distortions);
+      dispatch(WizardActions.advanceToDistortions({ ...session, distortions: suggested }));
     } catch (err) {
       handleError(err);
+    } finally {
+      dispatch(WizardActions.setLoading(false));
     }
   };
 
@@ -74,31 +156,49 @@ export function Wizard({ entryId, onFinish }: WizardProps) {
     }
     dispatch(WizardActions.setLoading(true));
     try {
-      const { session } = await api.submitDistortions({
-        entryId: state.session.entryId,
-        distortions: state.session.distortions.map(d => ({
+      if (!catalog) throw new Error('Socratic catalog not loaded');
+      const analysis: DistortionAnalysisItem[] = state.session.distortions.map(d => ({
+        distortionId: d.id,
+        label: d.label,
+        confidence: d.confidence,
+        evidence: d.evidence,
+      }));
+      const encryptedAnalysis = await encrypt(JSON.stringify(analysis));
+      const distortionsPayload = await Promise.all(
+        state.session.distortions.map(async d => ({
           distortionId: d.id,
           confidence: d.confidence,
-          evidence: d.evidence,
-        })),
+          evidence: d.evidence ? await encrypt(d.evidence) : '',
+        }))
+      );
+      const { entry } = await api.submitDistortions({
+        entryId: state.session.entryId,
+        distortionAnalysis: encryptedAnalysis,
+        distortions: distortionsPayload,
       });
+      const session = await decryptEntry(entry);
       dispatch(WizardActions.complete(session));
     } catch (err) {
       handleError(err);
+    } finally {
+      dispatch(WizardActions.setLoading(false));
     }
   };
 
   const handleSynthesisSubmit = async (synthesis: string) => {
     dispatch(WizardActions.setLoading(true));
     try {
+      const encryptedSynthesis = await encrypt(synthesis);
       await api.submitSynthesis({
         entryId: state.session.entryId,
-        synthesis,
+        synthesis: encryptedSynthesis,
       });
       dispatch(WizardActions.complete({ ...state.session, synthesis }));
       onFinish();
     } catch (err) {
       handleError(err);
+    } finally {
+      dispatch(WizardActions.setLoading(false));
     }
   };
 

@@ -7,12 +7,28 @@ export interface Question {
   text: string;
 }
 
+export interface InterrogationItem {
+  promptId: string;
+  text: string;
+  answer: string;
+  answeredAt: string;
+}
+
+export interface DistortionAnalysisItem {
+  distortionId: string;
+  label: string;
+  confidence: number;
+  evidence: string;
+}
+
 export interface DistortionOption {
   id: string;
   slug: string;
   label: string;
   description: string;
   colorAccent: string;
+  occurrenceCount: number;
+  createdAt: string;
   confidence: number;
   evidence: string;
 }

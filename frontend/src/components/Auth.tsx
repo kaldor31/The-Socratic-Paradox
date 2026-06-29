@@ -1,8 +1,10 @@
 import { useState } from 'react';
 import { Mail, Lock, User, KeyRound, ArrowLeft } from 'lucide-react';
 import { useAuth } from '../auth/AuthContext';
+import { useEncryption } from '../auth/EncryptionContext';
 import { useLanguage } from '../i18n/LanguageContext';
 import { api } from '../api/client';
+import { generateSalt, deriveKey, generateDataKey, encryptKey, decryptKey } from '../utils/crypto';
 
 interface AuthProps {
   onClose: () => void;
@@ -13,6 +15,7 @@ type AuthMode = 'login' | 'register' | 'verify' | 'forgot' | 'reset';
 export function Auth({ onClose }: AuthProps) {
   const { t } = useLanguage();
   const { login, register, verify, resetPassword } = useAuth();
+  const { unlock } = useEncryption();
   const [mode, setMode] = useState<AuthMode>('login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -34,6 +37,7 @@ export function Auth({ onClose }: AuthProps) {
     reset();
     try {
       await login({ email, password });
+      await unlock(password);
       onClose();
     } catch (err) {
       setError(err instanceof Error ? err.message : t('error.loginFailed'));
@@ -47,7 +51,11 @@ export function Auth({ onClose }: AuthProps) {
     setLoading(true);
     reset();
     try {
-      await register({ email, password, handle });
+      const salt = generateSalt();
+      const kek = await deriveKey(password, salt);
+      const dek = await generateDataKey();
+      const encryptedDataKey = await encryptKey(dek, kek);
+      await register({ email, password, handle, encryptionSalt: salt, encryptedDataKey });
       setMode('verify');
       setMessage(t('auth.verificationSent'));
     } catch (err) {
@@ -63,6 +71,7 @@ export function Auth({ onClose }: AuthProps) {
     reset();
     try {
       await verify({ email, code });
+      await unlock(password);
       onClose();
     } catch (err) {
       setError(err instanceof Error ? err.message : t('error.verificationFailed'));
@@ -91,7 +100,14 @@ export function Auth({ onClose }: AuthProps) {
     setLoading(true);
     reset();
     try {
-      await resetPassword({ email, token: code, newPassword });
+      const { encryptionSalt, encryptedDataKey } = await api.getKey(email);
+      if (!encryptionSalt || !encryptedDataKey) throw new Error('No encryption key material');
+      const tokenKek = await deriveKey(code, encryptionSalt);
+      const dek = await decryptKey(encryptedDataKey, tokenKek);
+      const newKek = await deriveKey(newPassword, encryptionSalt);
+      const newEncryptedDataKey = await encryptKey(dek, newKek);
+      await resetPassword({ email, token: code, newPassword, encryptedDataKey: newEncryptedDataKey });
+      await unlock(newPassword);
       onClose();
     } catch (err) {
       setError(err instanceof Error ? err.message : t('error.resetFailed'));

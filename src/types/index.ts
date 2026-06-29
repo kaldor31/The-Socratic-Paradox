@@ -5,6 +5,8 @@ export interface User {
   email?: string | null;
   handle?: string | null;
   passwordHash?: string | null;
+  encryptionSalt?: string | null;
+  encryptedDataKey?: string | null;
   isAnonymous: boolean;
   isVerified: boolean;
   verificationCode?: string | null;
@@ -61,9 +63,10 @@ export interface DistortionOption extends Distortion {
 export interface Entry {
   id: string;
   userId: string;
+  // these fields are encrypted client-side and stored as opaque strings
   thesis: string;
-  interrogation: InterrogationItem[];
-  distortionAnalysis: DistortionAnalysisItem[];
+  interrogation: string;
+  distortionAnalysis: string;
   synthesis?: string;
   status: EntryStatus;
   isFavorite: boolean;
@@ -90,16 +93,21 @@ export interface CreateEntryDto {
 
 export interface UpdateInterrogationDto {
   entryId: string;
-  answers: Record<string, string>;
+  // encrypted JSON string of InterrogationItem[]
+  interrogation: string;
 }
 
 export interface UpdateDistortionsDto {
   entryId: string;
+  // encrypted JSON string of DistortionAnalysisItem[]
+  distortionAnalysis: string;
+  // link table data; evidence is encrypted client-side
   distortions: Array<{ distortionId: string; confidence: number; evidence: string }>;
 }
 
 export interface UpdateSynthesisDto {
   entryId: string;
+  // encrypted text
   synthesis: string;
 }
 
@@ -115,7 +123,9 @@ export interface JournalEntry {
   id: string;
   userId: string;
   entryDate: string;
-  answers: Record<string, string>;
+  // encrypted JSON string
+  answers: string;
+  // encrypted PNG data URL
   drawing?: string;
   createdAt: string;
   updatedAt: string;
@@ -123,6 +133,8 @@ export interface JournalEntry {
 
 export interface UpsertJournalEntryDto {
   entryDate: string;
-  answers: Record<string, string>;
+  // encrypted JSON string
+  answers: string;
+  // encrypted PNG data URL
   drawing?: string;
 }

@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { ChevronDown, ChevronUp, ChevronLeft, ChevronRight, Trash2 } from 'lucide-react';
 import { useLanguage } from '../i18n/LanguageContext';
 import { api } from '../api/client';
+import { useCrypto } from '../auth/useCrypto';
 import { useConfirm } from './ConfirmDialog';
 import { JournalCanvas, JournalCanvasRef } from './JournalCanvas';
 import { CalendarPicker } from './CalendarPicker';
@@ -33,6 +34,7 @@ const clampToToday = (dateStr: string) => (dateStr > today ? today : dateStr);
 
 export function Journal() {
   const { t, language } = useLanguage();
+  const { encrypt, decrypt } = useCrypto();
   const prompts = language === 'ru' ? (ruPrompts as { categories: Category[] }) : (enPrompts as { categories: Category[] });
   const categories = prompts.categories;
   const [date, setDate] = useState(today);
@@ -57,11 +59,20 @@ export function Journal() {
     setIsDirty(false);
     loadedRef.current = false;
     api.getJournalEntry(date)
-      .then(({ entry }) => {
+      .then(async ({ entry }) => {
         if (cancelled) return;
-        setAnswers(entry?.answers ?? {});
-        setInitialDrawing(entry?.drawing);
-        setEntryId(entry?.id ?? null);
+        try {
+          const decryptedAnswers = entry?.answers ? JSON.parse(await decrypt(entry.answers)) : {};
+          const decryptedDrawing = entry?.drawing ? await decrypt(entry.drawing) : undefined;
+          setAnswers(decryptedAnswers);
+          setInitialDrawing(decryptedDrawing);
+          setEntryId(entry?.id ?? null);
+        } catch {
+          setError(t('common.error'));
+          setAnswers({});
+          setInitialDrawing(undefined);
+          setEntryId(null);
+        }
         loadedRef.current = true;
       })
       .catch(err => setError(err instanceof Error ? err.message : t('common.error')))
@@ -91,12 +102,14 @@ export function Journal() {
       const drawing = canvasRef.current?.hasDrawing()
         ? canvasRef.current.getDataUrl()
         : undefined;
-      const { entry } = await api.upsertJournalEntry({ entryDate: date, answers, drawing });
+      const encryptedAnswers = await encrypt(JSON.stringify(answers));
+      const encryptedDrawing = drawing ? await encrypt(drawing) : undefined;
+      const { entry } = await api.upsertJournalEntry({ entryDate: date, answers: encryptedAnswers, drawing: encryptedDrawing });
       if (!entry) throw new Error('Failed to save journal entry');
       setEntryId(entry.id);
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
-    setIsDirty(false);
+      setIsDirty(false);
     } catch (err) {
       setError(err instanceof Error ? err.message : t('common.error'));
     } finally {

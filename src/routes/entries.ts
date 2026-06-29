@@ -8,28 +8,32 @@ import { sql } from '../db.js';
 const router = Router();
 
 const createSchema = z.object({
-  thesis: z.string().min(3).max(2000),
+  thesis: z.string().min(1),
 });
 
 const interrogationSchema = z.object({
   entryId: z.string().uuid(),
-  answers: z.record(z.string().min(1)),
+  // encrypted JSON string of InterrogationItem[]
+  interrogation: z.string().min(1),
 });
 
 const distortionsSchema = z.object({
   entryId: z.string().uuid(),
+  // encrypted JSON string of DistortionAnalysisItem[]
+  distortionAnalysis: z.string().min(1),
   distortions: z.array(
     z.object({
       distortionId: z.string().uuid(),
       confidence: z.number().int().min(0).max(100),
-      evidence: z.string().max(1000).default(''),
+      evidence: z.string().default(''),
     })
   ),
 });
 
 const synthesisSchema = z.object({
   entryId: z.string().uuid(),
-  synthesis: z.string().min(3).max(3000),
+  // encrypted text
+  synthesis: z.string().min(1),
 });
 
 const paramsSchema = z.object({
@@ -73,13 +77,36 @@ router.get('/distortions', async (_req: Request, res: Response, next: NextFuncti
   }
 });
 
+router.get('/prompts', async (_req: Request, res: Response, next: NextFunction) => {
+  try {
+    const rows = await sql`
+      SELECT id, category, slug, text, sort_order, is_active, created_at
+      FROM socratic_prompts
+      WHERE is_active = true
+      ORDER BY category, sort_order
+    `;
+    const prompts = (rows as Record<string, unknown>[]).map(r => ({
+      id: r.id as string,
+      category: r.category as string,
+      slug: r.slug as string,
+      text: r.text as string,
+      sortOrder: r.sort_order as number,
+      isActive: r.is_active as boolean,
+      createdAt: r.created_at as string,
+    }));
+    res.json({ ok: true, prompts });
+  } catch (err) {
+    next(err);
+  }
+});
+
 router.use(authenticate);
 
 router.post('/sessions', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { thesis } = createSchema.parse(req.body);
-    const session = await socraticService.beginSession(req.userId!, thesis);
-    res.status(201).json({ ok: true, session });
+    const entry = await socraticService.beginSession(req.userId!, thesis);
+    res.status(201).json({ ok: true, entry });
   } catch (err) {
     next(err);
   }
@@ -88,8 +115,8 @@ router.post('/sessions', async (req: Request, res: Response, next: NextFunction)
 router.post('/sessions/interrogation', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const dto = interrogationSchema.parse(req.body);
-    const session = await socraticService.continueInterrogation(req.userId!, dto);
-    res.json({ ok: true, session });
+    const entry = await socraticService.continueInterrogation(req.userId!, dto);
+    res.json({ ok: true, entry });
   } catch (err) {
     next(err);
   }
@@ -98,8 +125,8 @@ router.post('/sessions/interrogation', async (req: Request, res: Response, next:
 router.post('/sessions/distortions', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const dto = distortionsSchema.parse(req.body);
-    const session = await socraticService.analyzeDistortions(req.userId!, dto);
-    res.json({ ok: true, session });
+    const entry = await socraticService.analyzeDistortions(req.userId!, dto);
+    res.json({ ok: true, entry });
   } catch (err) {
     next(err);
   }
@@ -108,8 +135,8 @@ router.post('/sessions/distortions', async (req: Request, res: Response, next: N
 router.post('/sessions/synthesis', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const dto = synthesisSchema.parse(req.body);
-    const session = await socraticService.synthesize(req.userId!, dto);
-    res.json({ ok: true, session });
+    const entry = await socraticService.synthesize(req.userId!, dto);
+    res.json({ ok: true, entry });
   } catch (err) {
     next(err);
   }
@@ -118,8 +145,8 @@ router.post('/sessions/synthesis', async (req: Request, res: Response, next: Nex
 router.get('/sessions/:entryId', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { entryId } = paramsSchema.parse(req.params);
-    const session = await socraticService.getSession(req.userId!, entryId);
-    res.json({ ok: true, session });
+    const entry = await socraticService.getSession(req.userId!, entryId);
+    res.json({ ok: true, entry });
   } catch (err) {
     next(err);
   }

@@ -7,7 +7,8 @@ import type {
   EntriesResponse,
   DashboardResponse,
   DistortionsResponse,
-  Entry,
+  PromptsResponse,
+  KeyResponse,
   RegisterDto,
   LoginDto,
   VerifyDto,
@@ -81,6 +82,12 @@ export const api = {
   getDistortions: () =>
     request<DistortionsResponse>('/distortions', { method: 'GET' }),
 
+  getPrompts: () =>
+    request<PromptsResponse>('/prompts', { method: 'GET' }),
+
+  getKey: (email: string) =>
+    request<KeyResponse>(`/auth/key?email=${encodeURIComponent(email)}`, { method: 'GET' }),
+
   deleteEntry: (entryId: string) =>
     request<{ ok: boolean }>(`/entries/${entryId}`, { method: 'DELETE' }),
 
@@ -146,4 +153,4 @@ export const api = {
     request<{ ok: boolean }>(`/journal/${id}`, { method: 'DELETE' }),
 };
 
-export type { Entry };
+export type { EncryptedEntry } from './types';

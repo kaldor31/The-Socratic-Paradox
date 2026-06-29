@@ -1,10 +1,19 @@
 import { useEffect, useState } from 'react';
 import { Calendar, Heart, Trash2 } from 'lucide-react';
 import { api } from '../api/client';
-import type { Entry } from '../api/client';
+import type { EncryptedEntry } from '../api/client';
+import { useCrypto } from '../auth/useCrypto';
 import { useLanguage } from '../i18n/LanguageContext';
 import { useConfirm } from './ConfirmDialog';
 import { tDynamic } from '../i18n/translations';
+
+interface EntryView {
+  id: string;
+  thesis: string;
+  status: EncryptedEntry['status'];
+  isFavorite: boolean;
+  createdAt: string;
+}
 
 interface EntryListProps {
   onResume: (entryId: string) => void;
@@ -12,17 +21,29 @@ interface EntryListProps {
 
 export function EntryList({ onResume }: EntryListProps) {
   const { t, language } = useLanguage();
-  const [entries, setEntries] = useState<Entry[]>([]);
+  const { decrypt } = useCrypto();
+  const [entries, setEntries] = useState<EntryView[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
   useEffect(() => {
     api.getEntries()
-      .then(res => setEntries(res.entries))
+      .then(async res => {
+        const views = await Promise.all(
+          res.entries.map(async entry => ({
+            id: entry.id,
+            thesis: entry.thesis ? await decrypt(entry.thesis) : '',
+            status: entry.status,
+            isFavorite: entry.isFavorite,
+            createdAt: entry.createdAt,
+          }))
+        );
+        setEntries(views);
+      })
       .catch(err => setError(err instanceof Error ? err.message : t('error.failedToLoadEntries')))
       .finally(() => setLoading(false));
-  }, []);
+  }, [decrypt, t]);
 
   const confirm = useConfirm();
 

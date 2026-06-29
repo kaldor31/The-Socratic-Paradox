@@ -17,6 +17,8 @@ CREATE TABLE IF NOT EXISTS users (
     email         VARCHAR(255) UNIQUE,
     handle        VARCHAR(32) UNIQUE,
     password_hash VARCHAR(255),
+    encryption_salt TEXT,
+    encrypted_data_key TEXT,
     is_anonymous  BOOLEAN NOT NULL DEFAULT true,
     is_verified   BOOLEAN NOT NULL DEFAULT false,
     verification_code VARCHAR(10),
@@ -34,11 +36,12 @@ CREATE TABLE IF NOT EXISTS users (
 CREATE TABLE IF NOT EXISTS entries (
     id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id         UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    thesis          TEXT NOT NULL CHECK (length(thesis) >= 3 AND length(thesis) <= 2000),
-    -- interrogation snapshot: JSON array of {question_id, answer, asked_at}
-    interrogation   JSONB NOT NULL DEFAULT '[]'::jsonb,
-    -- distortion analysis snapshot: JSON array of {distortion_id, confidence, rationale}
-    distortion_analysis JSONB NOT NULL DEFAULT '[]'::jsonb,
+    -- these fields are encrypted client-side before storage
+    thesis          TEXT NOT NULL,
+    -- interrogation snapshot: encrypted JSON array of {question_id, answer, asked_at}
+    interrogation   TEXT NOT NULL DEFAULT '',
+    -- distortion analysis snapshot: encrypted JSON array of {distortion_id, confidence, rationale}
+    distortion_analysis TEXT NOT NULL DEFAULT '',
     synthesis       TEXT,
     -- completion state machine: thesis | interrogation | distortions | synthesis
     status          VARCHAR(20) NOT NULL DEFAULT 'thesis',
@@ -82,7 +85,8 @@ CREATE TABLE IF NOT EXISTS journal_entries (
     id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id         UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     entry_date      DATE NOT NULL,
-    answers         JSONB NOT NULL DEFAULT '{}'::jsonb,
+    -- encrypted client-side
+    answers         TEXT NOT NULL DEFAULT '',
     drawing         TEXT,
     created_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
     updated_at      TIMESTAMPTZ NOT NULL DEFAULT now(),

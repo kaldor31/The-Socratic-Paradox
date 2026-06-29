@@ -21,7 +21,7 @@ function parseJournalEntry(row: Record<string, unknown>): JournalEntry {
     id: row.id as string,
     userId: row.userId as string,
     entryDate: toDateString(row.entryDate),
-    answers: (row.answers as Record<string, string>) ?? {},
+    answers: (row.answers as string) ?? '',
     drawing: (row.drawing as string) ?? undefined,
     createdAt: toIsoString(row.createdAt),
     updatedAt: toIsoString(row.updatedAt),
@@ -34,7 +34,7 @@ export class JournalRepository {
   async upsert(userId: string, dto: UpsertJournalEntryDto): Promise<JournalEntry> {
     const rows = await this.db`
       INSERT INTO journal_entries (user_id, entry_date, answers, drawing)
-      VALUES (${userId}, ${dto.entryDate}, ${JSON.stringify(dto.answers)}::jsonb, ${dto.drawing ?? null})
+      VALUES (${userId}, ${dto.entryDate}, ${dto.answers}, ${dto.drawing ?? null})
       ON CONFLICT (user_id, entry_date)
       DO UPDATE SET answers = EXCLUDED.answers,
                     drawing = EXCLUDED.drawing,

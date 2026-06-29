@@ -5,8 +5,6 @@ import type {
   Entry,
   CreateEntryDto,
   EntryStatus,
-  InterrogationItem,
-  DistortionAnalysisItem,
   DashboardMetric,
 } from '../types/index.js';
 
@@ -14,9 +12,9 @@ function parseEntry(row: Record<string, unknown>): Entry {
   return {
     id: row.id as string,
     userId: row.userId as string,
-    thesis: row.thesis as string,
-    interrogation: (row.interrogation as InterrogationItem[]) ?? [],
-    distortionAnalysis: (row.distortionAnalysis as DistortionAnalysisItem[]) ?? [],
+    thesis: (row.thesis as string) ?? '',
+    interrogation: (row.interrogation as string) ?? '',
+    distortionAnalysis: (row.distortionAnalysis as string) ?? '',
     synthesis: (row.synthesis as string) ?? undefined,
     status: row.status as EntryStatus,
     isFavorite: row.isFavorite as boolean,
@@ -58,11 +56,11 @@ export class EntryRepository {
 
   async updateInterrogation(
     entryId: string,
-    interrogation: InterrogationItem[]
+    interrogation: string
   ): Promise<Entry> {
     const rows = await this.db`
       UPDATE entries
-      SET interrogation = ${JSON.stringify(interrogation)}::jsonb,
+      SET interrogation = ${interrogation},
           status = 'distortions',
           updated_at = now()
       WHERE id = ${entryId}
@@ -75,11 +73,11 @@ export class EntryRepository {
 
   async updateDistortions(
     entryId: string,
-    distortionAnalysis: DistortionAnalysisItem[]
+    distortionAnalysis: string
   ): Promise<Entry> {
     const rows = await this.db`
       UPDATE entries
-      SET distortion_analysis = ${JSON.stringify(distortionAnalysis)}::jsonb,
+      SET distortion_analysis = ${distortionAnalysis},
           status = 'synthesis',
           updated_at = now()
       WHERE id = ${entryId}

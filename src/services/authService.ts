@@ -20,6 +20,8 @@ export interface RegisterDto {
   email: string;
   password: string;
   handle?: string;
+  encryptionSalt: string;
+  encryptedDataKey: string;
 }
 
 export interface LoginDto {
@@ -40,6 +42,7 @@ export interface ResetPasswordDto {
   email: string;
   token: string;
   newPassword: string;
+  encryptedDataKey: string;
 }
 
 export interface AuthTokens {
@@ -116,6 +119,8 @@ export class AuthService {
       email,
       handle: dto.handle?.trim() || null,
       passwordHash,
+      encryptionSalt: dto.encryptionSalt,
+      encryptedDataKey: dto.encryptedDataKey,
       verificationCode: code,
       verificationExpiresAt,
     });
@@ -160,30 +165,34 @@ export class AuthService {
     return { user, tokens: signTokens(user) };
   }
 
-  async forgotPassword(dto: ForgotPasswordDto): Promise<{ message: string }> {
+  async forgotPassword(dto: ForgotPasswordDto): Promise<{ message: string; token?: string }> {
     const email = dto.email.toLowerCase().trim();
     const user = await userRepository.findByEmail(email);
     if (!user || !user.passwordHash) throw new Error('If this email exists, a reset code has been sent');
 
     const token = generateResetToken();
+    const tokenHash = await bcrypt.hash(token, BCRYPT_ROUNDS);
     const resetExpiresAt = new Date(Date.now() + RESET_EXPIRES_MINUTES * 60 * 1000).toISOString();
-    await userRepository.setResetToken(user.id, token, resetExpiresAt);
+    await userRepository.setResetToken(user.id, tokenHash, resetExpiresAt);
 
     await sendEmailCode(email, token, 'Reset your Socratic Paradox password');
-    return { message: 'If this email exists, a reset code has been sent' };
+    return { message: 'If this email exists, a reset code has been sent', token };
   }
 
   async resetPassword(dto: ResetPasswordDto): Promise<AuthResult> {
     const email = dto.email.toLowerCase().trim();
     const user = await userRepository.findByEmail(email);
     if (!user || !user.passwordHash) throw new Error('Invalid reset request');
-    if (user.resetToken !== dto.token) throw new Error('Invalid reset code');
+    if (!user.resetToken) throw new Error('Invalid reset code');
+    const valid = await bcrypt.compare(dto.token, user.resetToken);
+    if (!valid) throw new Error('Invalid reset code');
     if (user.resetExpiresAt && new Date(user.resetExpiresAt) < new Date()) {
       throw new Error('Reset code expired');
     }
 
     const passwordHash = await bcrypt.hash(dto.newPassword, BCRYPT_ROUNDS);
     await userRepository.updatePassword(user.id, passwordHash);
+    await userRepository.updateDataKey(user.id, dto.encryptedDataKey);
     await userRepository.clearResetToken(user.id);
 
     const refreshed = await userRepository.findById(user.id);

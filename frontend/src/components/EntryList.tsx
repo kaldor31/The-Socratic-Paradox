@@ -20,7 +20,7 @@ export function EntryList({ onBack, onResume }: EntryListProps) {
   useEffect(() => {
     api.getEntries()
       .then(res => setEntries(res.entries))
-      .catch(err => setError(err instanceof Error ? err.message : 'Failed to load entries'))
+      .catch(err => setError(err instanceof Error ? err.message : t('error.failedToLoadEntries')))
       .finally(() => setLoading(false));
   }, []);
 
@@ -31,7 +31,7 @@ export function EntryList({ onBack, onResume }: EntryListProps) {
       await api.deleteEntry(entryId);
       setEntries(prev => prev.filter(e => e.id !== entryId));
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to delete entry');
+      setError(err instanceof Error ? err.message : t('error.failedToDeleteEntry'));
     } finally {
       setDeletingId(null);
     }
@@ -81,7 +81,7 @@ export function EntryList({ onBack, onResume }: EntryListProps) {
                 <div className="mt-2 flex items-center gap-4 text-sm text-ink-dim">
                   <span className="flex items-center gap-1">
                     <Calendar size={14} />
-                    {new Date(entry.createdAt).toLocaleDateString()}
+                    {new Date(entry.createdAt).toLocaleDateString(language)}
                   </span>
                   <span className="rounded-full bg-marble-700 px-2 py-0.5 text-xs capitalize">
                     {tDynamic(`entry.status.${entry.status}`, language) ?? entry.status}

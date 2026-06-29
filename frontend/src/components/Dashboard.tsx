@@ -19,7 +19,7 @@ export function Dashboard({ onNewEntry, onEntries }: DashboardProps) {
   useEffect(() => {
     api.getDashboard()
       .then(res => setMetrics(res.metrics))
-      .catch(err => setError(err instanceof Error ? err.message : 'Failed to load dashboard'))
+      .catch(err => setError(err instanceof Error ? err.message : t('error.failedToLoadDashboard')))
       .finally(() => setLoading(false));
   }, []);
 
@@ -96,7 +96,9 @@ export function Dashboard({ onNewEntry, onEntries }: DashboardProps) {
           <div className="mt-6 space-y-3">
             {metrics.sessionsByMonth.map(m => (
               <div key={m.month} className="flex items-center gap-4">
-                <span className="w-20 text-sm text-ink-muted">{m.month}</span>
+                <span className="w-20 text-sm text-ink-muted">
+                  {new Date(`${m.month}-01`).toLocaleDateString(language, { month: 'short', year: 'numeric' })}
+                </span>
                 <div className="flex-1 rounded-full bg-marble-700">
                   <div
                     className="h-2 rounded-full bg-gradient-to-r from-accent-rust to-accent-gold"

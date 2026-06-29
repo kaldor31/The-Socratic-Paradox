@@ -21,7 +21,7 @@ export function Account({ onBack, onOpenSettings }: AccountProps) {
   useEffect(() => {
     api.getEntries()
       .then(res => setEntries(res.entries))
-      .catch(err => setError(err instanceof Error ? err.message : 'Failed to load entries'))
+      .catch(err => setError(err instanceof Error ? err.message : t('error.failedToLoadEntries')))
       .finally(() => setLoading(false));
   }, []);
 
@@ -32,7 +32,7 @@ export function Account({ onBack, onOpenSettings }: AccountProps) {
       await api.deleteEntry(entryId);
       setEntries(prev => prev.filter(e => e.id !== entryId));
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to delete entry');
+      setError(err instanceof Error ? err.message : t('error.failedToDeleteEntry'));
     } finally {
       setDeletingId(null);
     }
@@ -44,7 +44,7 @@ export function Account({ onBack, onOpenSettings }: AccountProps) {
       await Promise.all(entries.map(e => api.deleteEntry(e.id)));
       setEntries([]);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to delete entries');
+      setError(err instanceof Error ? err.message : t('error.failedToDeleteEntries'));
     }
   };
 
@@ -74,7 +74,7 @@ export function Account({ onBack, onOpenSettings }: AccountProps) {
           <div>
             <p className="font-serif text-xl font-semibold">{user.handle || user.email || t('account.anonymous')}</p>
             <p className="text-sm text-ink-dim">{user.email}</p>
-            <p className="text-xs text-ink-dim">{t('account.since')}: {new Date(user.createdAt).toLocaleDateString()}</p>
+            <p className="text-xs text-ink-dim">{t('account.since')}: {new Date(user.createdAt).toLocaleDateString(language)}</p>
           </div>
         </div>
         <div className="mt-4 flex gap-2">
@@ -119,7 +119,7 @@ export function Account({ onBack, onOpenSettings }: AccountProps) {
                 <p className="font-serif font-semibold line-clamp-1">{entry.thesis}</p>
                 <p className="mt-1 flex items-center gap-1 text-xs text-ink-dim">
                   <Calendar size={12} />
-                  {new Date(entry.createdAt).toLocaleDateString()}
+                  {new Date(entry.createdAt).toLocaleDateString(language)}
                   <span className="rounded-full bg-marble-700 px-2 py-0.5 capitalize">{tDynamic(`entry.status.${entry.status}`, language) ?? entry.status}</span>
                 </p>
               </div>

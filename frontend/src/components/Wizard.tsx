@@ -18,9 +18,9 @@ export function Wizard({ onFinish, onBack }: WizardProps) {
   const [state, dispatch] = useReducer(wizardReducer, initialWizardState);
 
   const handleError = useCallback((err: unknown) => {
-    const message = err instanceof Error ? err.message : 'Something went wrong';
+    const message = err instanceof Error ? err.message : t('common.error');
     dispatch(WizardActions.setError(message));
-  }, []);
+  }, [t]);
 
   const handleThesisSubmit = async (thesis: string) => {
     dispatch(WizardActions.setLoading(true));

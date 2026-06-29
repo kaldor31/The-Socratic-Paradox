@@ -26,7 +26,7 @@ export function Settings({ onBack }: SettingsProps) {
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to save');
+      setError(err instanceof Error ? err.message : t('error.failedToSave'));
     } finally {
       setSaving(false);
     }

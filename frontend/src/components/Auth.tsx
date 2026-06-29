@@ -36,7 +36,7 @@ export function Auth({ onClose }: AuthProps) {
       await login({ email, password });
       onClose();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Login failed');
+      setError(err instanceof Error ? err.message : t('error.loginFailed'));
     } finally {
       setLoading(false);
     }
@@ -51,7 +51,7 @@ export function Auth({ onClose }: AuthProps) {
       setMode('verify');
       setMessage(t('auth.verificationSent'));
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Registration failed');
+      setError(err instanceof Error ? err.message : t('error.registrationFailed'));
     } finally {
       setLoading(false);
     }
@@ -65,7 +65,7 @@ export function Auth({ onClose }: AuthProps) {
       await verify({ email, code });
       onClose();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Verification failed');
+      setError(err instanceof Error ? err.message : t('error.verificationFailed'));
     } finally {
       setLoading(false);
     }
@@ -80,7 +80,7 @@ export function Auth({ onClose }: AuthProps) {
       setMode('reset');
       setMessage(t('auth.resetSent'));
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to send reset code');
+      setError(err instanceof Error ? err.message : t('error.sendResetFailed'));
     } finally {
       setLoading(false);
     }
@@ -94,7 +94,7 @@ export function Auth({ onClose }: AuthProps) {
       await resetPassword({ email, token: code, newPassword });
       onClose();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Reset failed');
+      setError(err instanceof Error ? err.message : t('error.resetFailed'));
     } finally {
       setLoading(false);
     }

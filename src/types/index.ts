@@ -11,6 +11,9 @@ export interface User {
   verificationExpiresAt?: string | null;
   resetToken?: string | null;
   resetExpiresAt?: string | null;
+  pendingEmail?: string | null;
+  emailChangeCode?: string | null;
+  emailChangeExpiresAt?: string | null;
   language: string;
   createdAt: string;
   updatedAt: string;

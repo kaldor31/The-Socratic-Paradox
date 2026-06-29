@@ -23,6 +23,9 @@ CREATE TABLE IF NOT EXISTS users (
     verification_expires_at TIMESTAMPTZ,
     reset_token   VARCHAR(255),
     reset_expires_at TIMESTAMPTZ,
+    pending_email VARCHAR(255) UNIQUE,
+    email_change_code VARCHAR(10),
+    email_change_expires_at TIMESTAMPTZ,
     language      VARCHAR(10) NOT NULL DEFAULT 'en',
     created_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
     updated_at    TIMESTAMPTZ NOT NULL DEFAULT now()

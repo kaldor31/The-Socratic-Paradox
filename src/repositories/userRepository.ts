@@ -15,6 +15,9 @@ function parseUser(row: Record<string, unknown>): User {
     verificationExpiresAt: (row.verificationExpiresAt as string) ?? null,
     resetToken: (row.resetToken as string) ?? null,
     resetExpiresAt: (row.resetExpiresAt as string) ?? null,
+    pendingEmail: (row.pendingEmail as string) ?? null,
+    emailChangeCode: (row.emailChangeCode as string) ?? null,
+    emailChangeExpiresAt: (row.emailChangeExpiresAt as string) ?? null,
     language: (row.language as string) ?? 'en',
     createdAt: row.createdAt as string,
     updatedAt: row.updatedAt as string,
@@ -99,6 +102,44 @@ export class UserRepository {
     await this.db`
       UPDATE users
       SET language = ${language},
+          updated_at = now()
+      WHERE id = ${userId}
+    `;
+  }
+
+  async findByHandle(handle: string): Promise<User | null> {
+    const rows = await this.db`SELECT * FROM users WHERE handle = ${handle.trim()}`;
+    const row = snakeToCamel(rows)[0];
+    return row ? parseUser(row) : null;
+  }
+
+  async setEmailChange(userId: string, newEmail: string, code: string, expiresAt: string): Promise<void> {
+    await this.db`
+      UPDATE users
+      SET pending_email = ${newEmail.toLowerCase()},
+          email_change_code = ${code},
+          email_change_expires_at = ${expiresAt},
+          updated_at = now()
+      WHERE id = ${userId}
+    `;
+  }
+
+  async updateEmail(userId: string, newEmail: string): Promise<void> {
+    await this.db`
+      UPDATE users
+      SET email = ${newEmail.toLowerCase()},
+          pending_email = null,
+          email_change_code = null,
+          email_change_expires_at = null,
+          updated_at = now()
+      WHERE id = ${userId}
+    `;
+  }
+
+  async updateHandle(userId: string, handle: string): Promise<void> {
+    await this.db`
+      UPDATE users
+      SET handle = ${handle.trim() || null},
           updated_at = now()
       WHERE id = ${userId}
     `;

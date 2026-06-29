@@ -14,6 +14,7 @@ if (process.env.NODE_ENV === 'production' && JWT_SECRET === DEFAULT_SECRET) {
 const BCRYPT_ROUNDS = 12;
 const VERIFICATION_EXPIRES_MINUTES = 30;
 const RESET_EXPIRES_MINUTES = 30;
+const EMAIL_CHANGE_EXPIRES_MINUTES = 30;
 
 export interface RegisterDto {
   email: string;
@@ -200,6 +201,71 @@ export class AuthService {
   async verifyAccessToken(token: string): Promise<{ userId: string; email?: string | null; isAnonymous: boolean }> {
     const decoded = jwt.verify(token, JWT_SECRET) as { userId: string; email?: string; isAnonymous: boolean };
     return decoded;
+  }
+
+  async requestEmailChange(userId: string, password: string, newEmail: string): Promise<{ message: string }> {
+    const user = await userRepository.findById(userId);
+    if (!user) throw new Error('User not found');
+    if (!user.passwordHash) throw new Error('Password is required to change email');
+
+    const valid = await bcrypt.compare(password, user.passwordHash);
+    if (!valid) throw new Error('Invalid password');
+
+    const email = newEmail.toLowerCase().trim();
+    if (email === user.email?.toLowerCase()) {
+      throw new Error('New email must be different from current email');
+    }
+
+    const existing = await userRepository.findByEmail(email);
+    if (existing && existing.id !== user.id) {
+      throw new Error('Email already in use');
+    }
+
+    const code = generateVerificationCode();
+    const expiresAt = new Date(Date.now() + EMAIL_CHANGE_EXPIRES_MINUTES * 60 * 1000).toISOString();
+    await userRepository.setEmailChange(userId, email, code, expiresAt);
+
+    try {
+      await sendEmailCode(email, code, 'Change your Socratic Paradox email');
+      return { message: 'Verification code sent to new email' };
+    } catch (err) {
+      logger.error({ err, email }, 'Failed to send email change verification');
+      return { message: 'Verification code created. Please check the server logs or your spam folder.' };
+    }
+  }
+
+  async confirmEmailChange(userId: string, newEmail: string, code: string): Promise<{ user: User }> {
+    const user = await userRepository.findById(userId);
+    if (!user) throw new Error('User not found');
+
+    const email = newEmail.toLowerCase().trim();
+    if (user.pendingEmail !== email) throw new Error('Email change was not requested');
+    if (user.emailChangeCode !== code) throw new Error('Invalid verification code');
+    if (user.emailChangeExpiresAt && new Date(user.emailChangeExpiresAt) < new Date()) {
+      throw new Error('Verification code expired');
+    }
+
+    await userRepository.updateEmail(userId, email);
+    const refreshed = await userRepository.findById(userId);
+    if (!refreshed) throw new Error('User not found');
+    return { user: refreshed };
+  }
+
+  async updateHandle(userId: string, handle: string): Promise<{ user: User }> {
+    const trimmed = handle.trim();
+    if (trimmed.length < 3 || trimmed.length > 32) {
+      throw new Error('Handle must be between 3 and 32 characters');
+    }
+
+    const existing = await userRepository.findByHandle(trimmed);
+    if (existing && existing.id !== userId) {
+      throw new Error('Handle already in use');
+    }
+
+    await userRepository.updateHandle(userId, trimmed);
+    const refreshed = await userRepository.findById(userId);
+    if (!refreshed) throw new Error('User not found');
+    return { user: refreshed };
   }
 }
 

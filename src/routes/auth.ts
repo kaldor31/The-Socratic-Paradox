@@ -73,6 +73,20 @@ const languageSchema = z.object({
   language: z.enum(['en', 'ru']),
 });
 
+const emailChangeRequestSchema = z.object({
+  password: z.string().min(8),
+  newEmail: z.string().email().max(255),
+});
+
+const emailChangeConfirmSchema = z.object({
+  newEmail: z.string().email().max(255),
+  code: z.string().length(6),
+});
+
+const handleSchema = z.object({
+  handle: z.string().min(3).max(32),
+});
+
 router.post('/auth/register', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const dto = registerSchema.parse(req.body);
@@ -176,6 +190,36 @@ router.patch('/auth/me/language', authenticate, async (req: Request, res: Respon
     const { language } = languageSchema.parse(req.body);
     await userRepository.updateLanguage(req.userId!, language);
     res.json({ ok: true, language });
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.post('/auth/me/email/change', authenticate, async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { password, newEmail } = emailChangeRequestSchema.parse(req.body);
+    const result = await authService.requestEmailChange(req.userId!, password, newEmail);
+    res.json({ ok: true, message: result.message });
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.post('/auth/me/email/verify', authenticate, async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { newEmail, code } = emailChangeConfirmSchema.parse(req.body);
+    const result = await authService.confirmEmailChange(req.userId!, newEmail, code);
+    res.json({ ok: true, user: sanitizeUser(result.user) });
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.patch('/auth/me/handle', authenticate, async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { handle } = handleSchema.parse(req.body);
+    const result = await authService.updateHandle(req.userId!, handle);
+    res.json({ ok: true, user: sanitizeUser(result.user) });
   } catch (err) {
     next(err);
   }

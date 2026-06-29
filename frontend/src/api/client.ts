@@ -13,6 +13,10 @@ import type {
   VerifyDto,
   ForgotPasswordDto,
   ResetPasswordDto,
+  EmailChangeRequestDto,
+  EmailChangeConfirmDto,
+  HandleUpdateDto,
+  AuthUser,
   AuthResponse,
   MeResponse,
 } from './types';
@@ -103,6 +107,24 @@ export const api = {
     request<{ ok: boolean; language: string }>('/auth/me/language', {
       method: 'PATCH',
       body: JSON.stringify({ language }),
+    }),
+
+  requestEmailChange: (dto: EmailChangeRequestDto) =>
+    request<{ ok: boolean; message: string }>('/auth/me/email/change', {
+      method: 'POST',
+      body: JSON.stringify(dto),
+    }),
+
+  confirmEmailChange: (dto: EmailChangeConfirmDto) =>
+    request<{ ok: boolean; user: AuthUser }>('/auth/me/email/verify', {
+      method: 'POST',
+      body: JSON.stringify(dto),
+    }),
+
+  updateHandle: (dto: HandleUpdateDto) =>
+    request<{ ok: boolean; user: AuthUser }>('/auth/me/handle', {
+      method: 'PATCH',
+      body: JSON.stringify(dto),
     }),
 };
 

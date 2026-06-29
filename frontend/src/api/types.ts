@@ -85,6 +85,20 @@ export interface ResetPasswordDto {
   newPassword: string;
 }
 
+export interface EmailChangeRequestDto {
+  password: string;
+  newEmail: string;
+}
+
+export interface EmailChangeConfirmDto {
+  newEmail: string;
+  code: string;
+}
+
+export interface HandleUpdateDto {
+  handle: string;
+}
+
 export interface AuthResponse {
   ok: boolean;
   user: AuthUser;

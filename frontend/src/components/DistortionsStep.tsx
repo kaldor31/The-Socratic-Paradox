@@ -37,7 +37,7 @@ export function DistortionsStep({ distortions, onChange, onSubmit, canAdvance }:
 
   return (
     <div className="panel">
-      <h2 className="font-serif text-3xl font-bold">{t('wizard.distortionsTitle')}</h2>
+      <h2 className="font-serif text-xl font-bold sm:text-3xl">{t('wizard.distortionsTitle')}</h2>
       <p className="mt-2 text-ink-muted">{t('wizard.distortionsHint')}</p>
 
       <div className="mt-6 grid gap-4 sm:grid-cols-2">

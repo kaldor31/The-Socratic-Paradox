@@ -58,33 +58,33 @@ export function Account({ onBack, onOpenSettings }: AccountProps) {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-3">
         <button onClick={onBack} className="btn-secondary">
           <ArrowLeft size={18} />
-          {t('common.back')}
+          <span className="hidden sm:inline">{t('common.back')}</span>
         </button>
-        <h2 className="font-serif text-3xl font-bold">{t('account.title')}</h2>
+        <h2 className="font-serif text-xl font-bold sm:text-3xl">{t('account.title')}</h2>
       </div>
 
       <div className="panel">
         <div className="flex items-center gap-4">
-          <div className="flex h-14 w-14 items-center justify-center rounded-full bg-accent-gold/20 text-accent-gold">
+          <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-accent-gold/20 text-accent-gold">
             <User size={28} />
           </div>
-          <div>
-            <p className="font-serif text-xl font-semibold">{user.handle || user.email || t('account.anonymous')}</p>
-            <p className="text-sm text-ink-dim">{user.email}</p>
+          <div className="min-w-0">
+            <p className="truncate font-serif text-xl font-semibold">{user.handle || user.email || t('account.anonymous')}</p>
+            <p className="truncate text-sm text-ink-dim">{user.email}</p>
             <p className="text-xs text-ink-dim">{t('account.since')}: {new Date(user.createdAt).toLocaleDateString(language)}</p>
           </div>
         </div>
-        <div className="mt-4 flex gap-2">
+        <div className="mt-4 flex flex-wrap gap-2">
           <button onClick={onOpenSettings} className="btn-secondary">
             <Settings size={18} />
-            {t('account.settings')}
+            <span className="hidden sm:inline">{t('account.settings')}</span>
           </button>
           <button onClick={logout} className="btn-secondary text-red-400 hover:bg-red-500/10">
             <LogOut size={18} />
-            {t('nav.signOut')}
+            <span className="hidden sm:inline">{t('nav.signOut')}</span>
           </button>
         </div>
       </div>

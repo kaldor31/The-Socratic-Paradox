@@ -14,7 +14,7 @@ export function SynthesisStep({ synthesis, thesis, onChange, onSubmit, canAdvanc
 
   return (
     <div className="panel">
-      <h2 className="font-serif text-3xl font-bold">{t('wizard.synthesisTitle')}</h2>
+      <h2 className="font-serif text-xl font-bold sm:text-3xl">{t('wizard.synthesisTitle')}</h2>
       <p className="mt-2 text-ink-muted">{t('wizard.synthesisHint')}</p>
 
       <div className="mt-6 rounded-xl border border-marble-700 bg-marble-900/50 p-4">

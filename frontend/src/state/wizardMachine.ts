@@ -140,6 +140,13 @@ export function canAdvance(state: WizardState, step: WizardStep): boolean {
   return isStepComplete(state, step);
 }
 
+export function isStepAccessible(state: WizardState, step: WizardStep): boolean {
+  const targetIndex = stepOrder.indexOf(step);
+  const currentIndex = stepOrder.indexOf(state.step);
+  if (targetIndex <= currentIndex) return true;
+  return stepOrder.slice(0, targetIndex).every(s => isStepComplete(state, s));
+}
+
 export function nextStep(step: WizardStep): WizardStep | null {
   const index = stepOrder.indexOf(step);
   return index < stepOrder.length - 1 ? stepOrder[index + 1] : null;

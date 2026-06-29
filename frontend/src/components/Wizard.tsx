@@ -1,6 +1,6 @@
 import { useReducer, useCallback, useEffect } from 'react';
 import { ArrowLeft, Loader2 } from 'lucide-react';
-import { wizardReducer, initialWizardState, WizardActions, canAdvance } from '../state/wizardMachine';
+import { wizardReducer, initialWizardState, WizardActions, canAdvance, isStepAccessible } from '../state/wizardMachine';
 import { api } from '../api/client';
 import { useLanguage } from '../i18n/LanguageContext';
 import { ThesisStep } from './ThesisStep';
@@ -113,31 +113,37 @@ export function Wizard({ entryId, onFinish, onBack }: WizardProps) {
   return (
     <div className="mx-auto max-w-3xl">
       <div className="mb-8 flex items-center justify-between">
-        <button onClick={onBack} className="btn-secondary">
+        <button onClick={onBack} className="btn-secondary shrink-0">
           <ArrowLeft size={18} />
-          {t('common.back')}
+          <span className="hidden sm:inline">{t('common.back')}</span>
         </button>
-        <div className="flex items-center gap-2">
-          {steps.map((s, i) => (
-            <button
-              key={s.id}
-              onClick={() => dispatch(WizardActions.setStep(s.id))}
-              className="flex items-center gap-2 rounded-lg p-1 transition-colors hover:bg-marble-800"
-            >
-              <span
-                className={`flex h-8 w-8 items-center justify-center rounded-full text-sm font-bold ${
-                  s.id === state.step || i < steps.findIndex(x => x.id === state.step)
-                    ? 'bg-accent-gold text-white shadow-glow-gold'
-                    : 'bg-marble-700 text-ink-muted'
+        <div className="flex items-center gap-1 sm:gap-2">
+          {steps.map((s, i) => {
+            const accessible = isStepAccessible(state, s.id);
+            return (
+              <button
+                key={s.id}
+                disabled={!accessible}
+                onClick={() => accessible && dispatch(WizardActions.setStep(s.id))}
+                className={`flex items-center gap-1 rounded-lg p-1 transition-colors sm:gap-2 ${
+                  accessible ? 'hover:bg-marble-800' : 'cursor-not-allowed opacity-50'
                 }`}
               >
-                {i + 1}
-              </span>
-              <span className={`hidden text-sm sm:inline ${s.id === state.step ? 'text-ink' : 'text-ink-muted'}`}>
-                {s.label}
-              </span>
-            </button>
-          ))}
+                <span
+                  className={`flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold sm:h-8 sm:w-8 sm:text-sm ${
+                    s.id === state.step || i < steps.findIndex(x => x.id === state.step)
+                      ? 'bg-accent-gold text-white shadow-glow-gold'
+                      : 'bg-marble-700 text-ink-muted'
+                  }`}
+                >
+                  {i + 1}
+                </span>
+                <span className={`hidden text-sm sm:inline ${s.id === state.step ? 'text-ink' : 'text-ink-muted'}`}>
+                  {s.label}
+                </span>
+              </button>
+            );
+          })}
         </div>
       </div>
 

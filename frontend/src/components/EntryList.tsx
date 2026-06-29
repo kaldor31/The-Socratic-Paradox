@@ -55,12 +55,12 @@ export function EntryList({ onBack, onResume }: EntryListProps) {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-3">
         <button onClick={onBack} className="btn-secondary">
           <ArrowLeft size={18} />
-          {t('common.backToDashboard')}
+          <span className="hidden sm:inline">{t('common.backToDashboard')}</span>
         </button>
-        <h2 className="font-serif text-3xl font-bold">{t('entries.title')}</h2>
+        <h2 className="font-serif text-xl font-bold sm:text-3xl">{t('entries.title')}</h2>
       </div>
 
       {entries.length === 0 ? (

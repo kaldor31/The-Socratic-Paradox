@@ -132,7 +132,7 @@ export function Auth({ onClose }: AuthProps) {
           <button type="submit" disabled={loading} className="btn-primary w-full justify-center disabled:opacity-50">
             {loading ? t('common.loading') : t('auth.signIn')}
           </button>
-          <div className="flex justify-between text-sm">
+          <div className="flex flex-col justify-between gap-2 text-sm sm:flex-row sm:items-center">
             <button type="button" onClick={() => { reset(); setMode('register'); }} className="text-accent-gold hover:underline">
               {t('auth.noAccount')}
             </button>

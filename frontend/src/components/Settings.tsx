@@ -132,12 +132,12 @@ export function Settings({ onBack }: SettingsProps) {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-3">
         <button onClick={onBack} className="btn-secondary">
           <ArrowLeft size={18} />
-          {t('common.back')}
+          <span className="hidden sm:inline">{t('common.back')}</span>
         </button>
-        <h2 className="font-serif text-2xl font-bold sm:text-3xl">{t('settings.title')}</h2>
+        <h2 className="font-serif text-xl font-bold sm:text-3xl">{t('settings.title')}</h2>
       </div>
 
       <div className="panel">
@@ -176,28 +176,28 @@ export function Settings({ onBack }: SettingsProps) {
       <div className="panel">
         <h3 className="font-serif text-xl font-semibold">{t('settings.account')}</h3>
 
-        <div className="mt-4 flex items-center justify-between rounded-xl border border-marble-700 bg-marble-900/50 p-4">
-          <div className="flex items-center gap-3">
+        <div className="mt-4 flex items-center justify-between gap-3 rounded-xl border border-marble-700 bg-marble-900/50 p-4">
+          <div className="flex min-w-0 items-center gap-3">
             <Mail size={18} className="text-accent-gold" />
-            <div>
+            <div className="min-w-0">
               <p className="text-xs uppercase tracking-wider text-ink-dim">{t('settings.email')}</p>
-              <p className="font-medium text-ink">{user?.email || '—'}</p>
+              <p className="truncate font-medium text-ink">{user?.email || '—'}</p>
             </div>
           </div>
-          <button onClick={startEditingEmail} className="rounded-lg p-2 text-ink-dim hover:bg-marble-800 hover:text-ink" aria-label={t('settings.changeEmail')}>
+          <button onClick={startEditingEmail} className="shrink-0 rounded-lg p-2 text-ink-dim hover:bg-marble-800 hover:text-ink" aria-label={t('settings.changeEmail')}>
             <Pencil size={18} />
           </button>
         </div>
 
-        <div className="mt-3 flex items-center justify-between rounded-xl border border-marble-700 bg-marble-900/50 p-4">
-          <div className="flex items-center gap-3">
+        <div className="mt-3 flex items-center justify-between gap-3 rounded-xl border border-marble-700 bg-marble-900/50 p-4">
+          <div className="flex min-w-0 items-center gap-3">
             <User size={18} className="text-accent-gold" />
-            <div>
+            <div className="min-w-0">
               <p className="text-xs uppercase tracking-wider text-ink-dim">{t('settings.nickname')}</p>
-              <p className="font-medium text-ink">{user?.handle || '—'}</p>
+              <p className="truncate font-medium text-ink">{user?.handle || '—'}</p>
             </div>
           </div>
-          <button onClick={startEditingHandle} className="rounded-lg p-2 text-ink-dim hover:bg-marble-800 hover:text-ink" aria-label={t('settings.changeNickname')}>
+          <button onClick={startEditingHandle} className="shrink-0 rounded-lg p-2 text-ink-dim hover:bg-marble-800 hover:text-ink" aria-label={t('settings.changeNickname')}>
             <Pencil size={18} />
           </button>
         </div>

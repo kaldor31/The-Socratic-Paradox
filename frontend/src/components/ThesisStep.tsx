@@ -13,7 +13,7 @@ export function ThesisStep({ thesis, onChange, onSubmit }: ThesisStepProps) {
 
   return (
     <div className="panel">
-      <h2 className="font-serif text-3xl font-bold">{t('wizard.thesisTitle')}</h2>
+      <h2 className="font-serif text-xl font-bold sm:text-3xl">{t('wizard.thesisTitle')}</h2>
       <p className="mt-2 text-ink-muted">{t('wizard.thesisHint')}</p>
 
       <textarea

@@ -34,6 +34,8 @@ export const JournalCanvas = forwardRef<JournalCanvasRef, JournalCanvasProps>(
     const [isEraser, setIsEraser] = useState(false);
     const [history, setHistory] = useState<HistoryItem[]>([]);
     const [historyIndex, setHistoryIndex] = useState(-1);
+    const onChangeRef = useRef(onChange);
+    onChangeRef.current = onChange;
 
     const getSnapshot = useCallback(() => {
       const ctx = ctxRef.current;
@@ -45,8 +47,8 @@ export const JournalCanvas = forwardRef<JournalCanvasRef, JournalCanvasProps>(
       if (!ctx) return;
       ctx.putImageData(item.data, 0, 0);
       strokeCountRef.current = item.strokeCount;
-      onChange?.();
-    }, [onChange]);
+      onChangeRef.current?.();
+    }, []);
 
     const pushSnapshot = useCallback(() => {
       const snapshot = getSnapshot();
@@ -90,11 +92,11 @@ export const JournalCanvas = forwardRef<JournalCanvasRef, JournalCanvasProps>(
           const snapshot = ctx.getImageData(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
           setHistory([{ data: snapshot, strokeCount: 1 }]);
           setHistoryIndex(0);
-          onChange?.();
+          onChangeRef.current?.();
         };
         img.src = initialDrawing;
       }
-    }, [initialDrawing, resetCanvas, onChange]);
+    }, [initialDrawing, resetCanvas]);
 
     const getCoordinates = (e: MouseEvent | TouchEvent) => {
       const canvas = canvasRef.current;
@@ -127,7 +129,6 @@ export const JournalCanvas = forwardRef<JournalCanvasRef, JournalCanvasProps>(
       const { x, y } = getCoordinates(e.nativeEvent);
       ctx.lineTo(x, y);
       ctx.stroke();
-      onChange?.();
     };
 
     const stopDrawing = (e: React.MouseEvent | React.TouchEvent) => {
@@ -139,6 +140,7 @@ export const JournalCanvas = forwardRef<JournalCanvasRef, JournalCanvasProps>(
       isDrawingRef.current = false;
       strokeCountRef.current += 1;
       pushSnapshot();
+      onChangeRef.current?.();
     };
 
     const getDataUrl = () => {
@@ -153,8 +155,8 @@ export const JournalCanvas = forwardRef<JournalCanvasRef, JournalCanvasProps>(
       ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
       strokeCountRef.current = 0;
       pushSnapshot();
-      onChange?.();
-    }, [pushSnapshot, onChange]);
+      onChangeRef.current?.();
+    }, [pushSnapshot]);
 
     const hasDrawing = () => strokeCountRef.current > 0;
 

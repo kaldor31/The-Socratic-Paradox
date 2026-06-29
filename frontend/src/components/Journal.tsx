@@ -1,12 +1,12 @@
 import { useState, useEffect, useRef } from 'react';
-import { ArrowLeft, Calendar, ChevronDown, ChevronUp, Save, Trash2 } from 'lucide-react';
+import { ArrowLeft, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, Save, Trash2 } from 'lucide-react';
 import { useLanguage } from '../i18n/LanguageContext';
 import { api } from '../api/client';
 import { useConfirm } from './ConfirmDialog';
 import { JournalCanvas, JournalCanvasRef } from './JournalCanvas';
+import { CalendarPicker } from './CalendarPicker';
 import enPrompts from '../../../content/journalPrompts.json';
 import ruPrompts from '../../../content/journalPromptsRu.json';
-import type { JournalEntry as ApiJournalEntry } from '../api/types';
 
 interface Prompt {
   slug: string;
@@ -25,24 +25,27 @@ interface JournalProps {
 
 const localDate = (d = new Date()) => d.toLocaleDateString('en-CA');
 
+const today = localDate();
+
 const addDays = (dateStr: string, delta: number) => {
   const d = new Date(`${dateStr}T00:00:00`);
   d.setDate(d.getDate() + delta);
   return localDate(d);
 };
 
+const clampToToday = (dateStr: string) => (dateStr > today ? today : dateStr);
+
 export function Journal({ onBack }: JournalProps) {
   const { t, language } = useLanguage();
   const prompts = language === 'ru' ? (ruPrompts as { categories: Category[] }) : (enPrompts as { categories: Category[] });
   const categories = prompts.categories;
-  const [date, setDate] = useState(localDate());
+  const [date, setDate] = useState(today);
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [expanded, setExpanded] = useState<Record<string, boolean>>({ daily: true });
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [entries, setEntries] = useState<ApiJournalEntry[]>([]);
   const canvasRef = useRef<JournalCanvasRef>(null);
   const [initialDrawing, setInitialDrawing] = useState<string | undefined>();
   const [entryId, setEntryId] = useState<string | null>(null);
@@ -69,12 +72,6 @@ export function Journal({ onBack }: JournalProps) {
       .finally(() => setLoading(false));
     return () => { cancelled = true; };
   }, [date, t]);
-
-  useEffect(() => {
-    api.getJournalEntries()
-      .then(({ entries }) => setEntries(entries))
-      .catch(() => {});
-  }, []);
 
   const handleAnswerChange = (slug: string, value: string) => {
     setAnswers(prev => ({ ...prev, [slug]: value }));
@@ -103,11 +100,6 @@ export function Journal({ onBack }: JournalProps) {
       setEntryId(entry.id);
       setInitialDrawing(entry.drawing);
       setSaved(true);
-      setEntries(prev => {
-        const next: ApiJournalEntry[] = prev.filter(e => e.entryDate !== entry.entryDate);
-        next.unshift(entry);
-        return next.sort((a, b) => b.entryDate.localeCompare(a.entryDate));
-      });
       setTimeout(() => setSaved(false), 2000);
     setIsDirty(false);
     } catch (err) {
@@ -142,7 +134,6 @@ export function Journal({ onBack }: JournalProps) {
       setAnswers({});
       setInitialDrawing(undefined);
       setEntryId(null);
-      setEntries(prev => prev.filter(e => e.id !== entryId));
     } catch (err) {
       setError(err instanceof Error ? err.message : t('common.error'));
     } finally {
@@ -161,21 +152,22 @@ export function Journal({ onBack }: JournalProps) {
       </div>
 
       <div className="panel">
-        <div className="flex flex-wrap items-center gap-3">
-          <button onClick={() => setDate(addDays(date, -1))} className="btn-secondary">
-            ←
-          </button>
-          <div className="relative flex items-center">
-            <Calendar size={18} className="pointer-events-none absolute left-3 text-accent-gold" />
-            <input
-              type="date"
-              value={date}
-              onChange={e => setDate(e.target.value)}
-              className="date-input pl-10 pr-3"
-            />
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <button onClick={() => setDate(addDays(date, -1))} className="btn-secondary p-2">
+              <ChevronLeft size={20} />
+            </button>
+            <CalendarPicker value={date} onChange={setDate} maxDate={today} />
+            <button
+              onClick={() => setDate(clampToToday(addDays(date, 1)))}
+              disabled={date >= today}
+              className="btn-secondary p-2 disabled:opacity-40"
+            >
+              <ChevronRight size={20} />
+            </button>
           </div>
-          <button onClick={() => setDate(addDays(date, 1))} className="btn-secondary">
-            →
+          <button onClick={() => setDate(today)} className="btn-secondary text-sm">
+            {t('journal.today')}
           </button>
         </div>
       </div>
@@ -250,28 +242,6 @@ export function Journal({ onBack }: JournalProps) {
         </>
       )}
 
-      <div className="panel">
-        <h3 className="font-serif text-xl font-semibold">{t('journal.entries')}</h3>
-        {entries.length === 0 ? (
-          <p className="mt-4 text-ink-muted">{t('journal.noEntries')}</p>
-        ) : (
-          <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {entries.map(entry => (
-              <div
-                key={entry.id}
-                className={`rounded-xl border p-4 ${
-                  entry.entryDate === date
-                    ? 'border-accent-gold bg-accent-gold/10'
-                    : 'border-marble-700 bg-marble-900/50'
-                }`}
-              >
-                <p className="font-serif font-semibold text-ink">{entry.entryDate}</p>
-                <p className="text-xs text-ink-dim">{Object.keys(entry.answers).length} answers</p>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
     </div>
   );
 }

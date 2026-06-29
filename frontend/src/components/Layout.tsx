@@ -19,21 +19,23 @@ export function Layout({ activeView, onNavigate, onOpenAuth, children }: LayoutP
   const confirm = useConfirm();
   const [menuOpen, setMenuOpen] = useState(false);
 
-  const nav = [
-    ...(isAuthenticated
-      ? [{ id: 'quotes' as View, label: t('nav.quotes'), icon: Quote }]
-      : [{ id: 'onboarding' as View, label: t('nav.intro'), icon: Sparkles }]),
-    { id: 'wizard' as View, label: t('nav.newSession'), icon: Plus },
-    { id: 'dashboard' as View, label: t('nav.dashboard'), icon: BarChart3 },
-    { id: 'entries' as View, label: t('nav.entries'), icon: BookOpen },
-    { id: 'journal' as View, label: t('nav.journal'), icon: Notebook },
-  ];
+  const nav = isAuthenticated
+    ? [
+        { id: 'quotes' as View, label: t('nav.quotes'), icon: Quote },
+        { id: 'wizard' as View, label: t('nav.newSession'), icon: Plus },
+        { id: 'dashboard' as View, label: t('nav.dashboard'), icon: BarChart3 },
+        { id: 'entries' as View, label: t('nav.entries'), icon: BookOpen },
+        { id: 'journal' as View, label: t('nav.journal'), icon: Notebook },
+      ]
+    : [{ id: 'onboarding' as View, label: t('nav.intro'), icon: Sparkles }];
 
-  const menuItems = [
-    ...nav,
-    ...(isAuthenticated ? [{ id: 'account' as View, label: t('nav.account'), icon: User }] : []),
-    { id: 'settings' as View, label: t('nav.settings'), icon: Settings },
-  ];
+  const menuItems = isAuthenticated
+    ? [
+        ...nav,
+        { id: 'account' as View, label: t('nav.account'), icon: User },
+        { id: 'settings' as View, label: t('nav.settings'), icon: Settings },
+      ]
+    : [{ id: 'onboarding' as View, label: t('nav.intro'), icon: Sparkles }];
 
   const handleNavigate = (view: View) => {
     setMenuOpen(false);

@@ -50,6 +50,7 @@ export const JournalCanvas = forwardRef<JournalCanvasRef, JournalCanvasProps>(
     const saveTimeoutRef = useRef<number | null>(null);
     const bgColorRef = useRef(getCanvasBg());
     const lastPointRef = useRef<{ x: number; y: number } | null>(null);
+    const lastMidRef = useRef<{ x: number; y: number } | null>(null);
     onChangeRef.current = onChange;
 
     const getSnapshot = useCallback(() => {
@@ -231,6 +232,7 @@ export const JournalCanvas = forwardRef<JournalCanvasRef, JournalCanvasProps>(
       isDrawingRef.current = true;
       const { x, y } = getCoordinates(e.nativeEvent);
       lastPointRef.current = { x, y };
+      lastMidRef.current = null;
       ctx.beginPath();
       ctx.moveTo(x, y);
       ctx.lineCap = 'round';
@@ -253,10 +255,17 @@ export const JournalCanvas = forwardRef<JournalCanvasRef, JournalCanvasProps>(
       if (!last) return;
       const midX = (last.x + x) / 2;
       const midY = (last.y + y) / 2;
+      const lastMid = lastMidRef.current;
       ctx.beginPath();
-      ctx.moveTo(last.x, last.y);
-      ctx.quadraticCurveTo(last.x, last.y, midX, midY);
+      if (lastMid) {
+        ctx.moveTo(lastMid.x, lastMid.y);
+        ctx.quadraticCurveTo(last.x, last.y, midX, midY);
+      } else {
+        ctx.moveTo(last.x, last.y);
+        ctx.lineTo(midX, midY);
+      }
       ctx.stroke();
+      lastMidRef.current = { x: midX, y: midY };
       lastPointRef.current = { x, y };
     };
 
@@ -268,14 +277,21 @@ export const JournalCanvas = forwardRef<JournalCanvasRef, JournalCanvasProps>(
       if (!ctx) return;
       const { x, y } = getCoordinates(e.nativeEvent);
       const last = lastPointRef.current;
+      const lastMid = lastMidRef.current;
       if (last) {
         ctx.beginPath();
-        ctx.moveTo(last.x, last.y);
-        ctx.quadraticCurveTo(last.x, last.y, x, y);
+        if (lastMid) {
+          ctx.moveTo(lastMid.x, lastMid.y);
+          ctx.quadraticCurveTo(last.x, last.y, x, y);
+        } else {
+          ctx.moveTo(last.x, last.y);
+          ctx.lineTo(x, y);
+        }
         ctx.stroke();
       }
       isDrawingRef.current = false;
       lastPointRef.current = null;
+      lastMidRef.current = null;
       strokeCountRef.current += 1;
       pushSnapshot();
       onChangeRef.current?.();

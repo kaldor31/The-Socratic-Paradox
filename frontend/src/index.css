@@ -24,21 +24,21 @@
   }
 
   .light {
-    --marble-midnight: 245 242 235;
-    --marble-900: 255 255 255;
-    --marble-800: 247 245 240;
-    --marble-700: 237 233 224;
-    --marble-600: 216 210 197;
+    --marble-midnight: 239 234 222;
+    --marble-900: 255 252 243;
+    --marble-800: 249 245 236;
+    --marble-700: 240 234 221;
+    --marble-600: 222 214 195;
     --accent-gold: 176 141 75;
     --accent-rust: 168 92 50;
     --accent-patina: 91 138 130;
     --accent-bronze: 140 123 94;
-    --ink: 30 27 23;
-    --ink-muted: 92 86 77;
-    --ink-dim: 138 130 117;
-    --parchment: 232 226 214;
-    --parchment-dark: 216 208 192;
-    --canvas-bg: 247 245 240;
+    --ink: 46 39 29;
+    --ink-muted: 105 96 79;
+    --ink-dim: 147 137 116;
+    --parchment: 245 239 226;
+    --parchment-dark: 222 214 195;
+    --canvas-bg: 250 246 237;
   }
 
   html {
@@ -116,4 +116,66 @@
   .glow-text {
     text-shadow: 0 0 18px rgba(199, 166, 99, 0.45);
   }
+}
+
+@keyframes quote-float {
+  0%, 100% {
+    transform: translateY(0) rotate(0deg);
+  }
+  33% {
+    transform: translateY(-8px) rotate(0.6deg);
+  }
+  66% {
+    transform: translateY(4px) rotate(-0.4deg);
+  }
+}
+
+@keyframes quote-jump {
+  0% {
+    transform: scale(1) rotate(0deg);
+  }
+  25% {
+    transform: scale(1.05) rotate(3deg) translateY(-14px);
+  }
+  50% {
+    transform: scale(0.98) rotate(-2deg) translateY(2px);
+  }
+  75% {
+    transform: scale(1.02) rotate(1deg) translateY(-4px);
+  }
+  100% {
+    transform: scale(1) rotate(0deg);
+  }
+}
+
+@keyframes quote-icon-spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+.quote-card {
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  animation: quote-float 6s ease-in-out infinite;
+  will-change: transform;
+}
+
+.quote-card:hover {
+  transform: translateY(-8px) rotate(1deg) scale(1.02);
+  box-shadow: 0 12px 28px -8px rgba(0, 0, 0, 0.25);
+}
+
+.light .quote-card:hover {
+  box-shadow: 0 12px 28px -8px rgba(46, 39, 29, 0.18);
+}
+
+.quote-card.jumping {
+  animation: quote-jump 0.65s ease-out;
+}
+
+.quote-card:hover .quote-icon {
+  animation: quote-icon-spin 4s linear infinite;
 }

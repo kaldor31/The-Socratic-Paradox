@@ -15,6 +15,15 @@ type View = 'onboarding' | 'quotes' | 'wizard' | 'dashboard' | 'entries' | 'jour
 
 const protectedViews: View[] = ['wizard', 'dashboard', 'entries', 'journal', 'account', 'settings', 'quotes'];
 
+const LAST_VIEW_KEY = 'sp-last-view';
+
+function getValidView(isAuthenticated: boolean, stored: View | null): View {
+  if (isAuthenticated) {
+    return stored && protectedViews.includes(stored) ? stored : 'journal';
+  }
+  return stored === 'onboarding' ? 'onboarding' : 'onboarding';
+}
+
 function App() {
   const { user, isLoading, isAuthenticated } = useAuth();
   const [view, setView] = useState<View>(isAuthenticated ? 'journal' : 'onboarding');
@@ -29,23 +38,33 @@ function App() {
 
   useEffect(() => {
     if (!isLoading) {
-      setView(isAuthenticated ? 'journal' : 'onboarding');
+      const stored = localStorage.getItem(LAST_VIEW_KEY) as View | null;
+      setView(getValidView(isAuthenticated, stored));
     }
   }, [isLoading, isAuthenticated]);
 
+  const setStoredView = (newView: View) => {
+    setView(newView);
+    if (newView !== 'auth') {
+      localStorage.setItem(LAST_VIEW_KEY, newView);
+    }
+  };
+
   const handleNavigate = (newView: View) => {
     if (!isAuthenticated && protectedViews.includes(newView)) {
+      setStoredView(newView);
       setShowAuth(true);
       return;
     }
     if (newView !== 'auth') setShowAuth(false);
     if (newView === 'wizard') setResumeEntryId(null);
-    setView(newView);
+    setStoredView(newView);
   };
 
   const handleCloseAuth = () => {
     setShowAuth(false);
-    setView(user ? 'journal' : 'onboarding');
+    const stored = localStorage.getItem(LAST_VIEW_KEY) as View | null;
+    setStoredView(user ? getValidView(true, stored) : 'onboarding');
   };
 
   if (isLoading) {

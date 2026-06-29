@@ -5,6 +5,7 @@ import { useAuth } from './AuthContext';
 interface EncryptionContextValue {
   dataKey: CryptoKey | null;
   isUnlocked: boolean;
+  isLoading: boolean;
   getDataKey: () => CryptoKey | null;
   unlock: (password: string, userOverride?: { encryptionSalt?: string | null; encryptedDataKey?: string | null }) => Promise<void>;
   lock: () => void;
@@ -19,6 +20,7 @@ export function EncryptionProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth();
   const dataKeyRef = useRef<CryptoKey | null>(null);
   const [isUnlocked, setIsUnlocked] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const previousUserRef = useRef(user);
   const userRef = useRef(user);
 
@@ -37,7 +39,10 @@ export function EncryptionProvider({ children }: { children: ReactNode }) {
         .catch(() => {
           localStorage.removeItem(STORAGE_KEY);
           setIsUnlocked(false);
-        });
+        })
+        .finally(() => setIsLoading(false));
+    } else {
+      setIsLoading(false);
     }
   }, []);
 
@@ -78,7 +83,7 @@ export function EncryptionProvider({ children }: { children: ReactNode }) {
   const getDataKey = useCallback(() => dataKeyRef.current, []);
 
   return (
-    <EncryptionContext.Provider value={{ dataKey: dataKeyRef.current, isUnlocked, getDataKey, unlock, lock, setDataKey }}>
+    <EncryptionContext.Provider value={{ dataKey: dataKeyRef.current, isUnlocked, isLoading, getDataKey, unlock, lock, setDataKey }}>
       {children}
     </EncryptionContext.Provider>
   );

@@ -10,6 +10,7 @@ import { Settings } from './components/Settings';
 import { Journal } from './components/Journal';
 import { Quotes } from './components/Quotes';
 import { useAuth } from './auth/AuthContext';
+import { useEncryption } from './auth/EncryptionContext';
 
 type View = 'onboarding' | 'quotes' | 'wizard' | 'dashboard' | 'entries' | 'journal' | 'account' | 'settings' | 'auth';
 
@@ -26,6 +27,7 @@ function getValidView(isAuthenticated: boolean, stored: View | null): View {
 
 function App() {
   const { user, isLoading, isAuthenticated } = useAuth();
+  const { isUnlocked, isLoading: encryptionLoading } = useEncryption();
   const [view, setView] = useState<View>(isAuthenticated ? 'journal' : 'onboarding');
   const [showAuth, setShowAuth] = useState(false);
   const [resumeEntryId, setResumeEntryId] = useState<string | null>(null);
@@ -42,6 +44,12 @@ function App() {
       setView(getValidView(isAuthenticated, stored));
     }
   }, [isLoading, isAuthenticated]);
+
+  useEffect(() => {
+    if (!isLoading && !encryptionLoading && isAuthenticated && !isUnlocked) {
+      setShowAuth(true);
+    }
+  }, [isLoading, encryptionLoading, isAuthenticated, isUnlocked]);
 
   const setStoredView = (newView: View) => {
     setView(newView);

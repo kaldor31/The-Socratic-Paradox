@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Mail, Lock, User, KeyRound, ArrowLeft } from 'lucide-react';
 import { useAuth } from '../auth/AuthContext';
 import { useEncryption } from '../auth/EncryptionContext';
 import { useLanguage } from '../i18n/LanguageContext';
+import { ShieldAlert } from 'lucide-react';
 import { api } from '../api/client';
 import { generateSalt, deriveKey, generateDataKey, encryptKey, decryptKey } from '../utils/crypto';
 
@@ -14,9 +15,16 @@ type AuthMode = 'login' | 'register' | 'verify' | 'forgot' | 'reset';
 
 export function Auth({ onClose }: AuthProps) {
   const { t } = useLanguage();
-  const { login, register, verify, resetPassword } = useAuth();
-  const { unlock } = useEncryption();
+  const { user, login, register, verify, resetPassword } = useAuth();
+  const { isUnlocked, unlock } = useEncryption();
+  const needsUnlock = !!user && !isUnlocked;
   const [mode, setMode] = useState<AuthMode>('login');
+
+  useEffect(() => {
+    if (needsUnlock && user?.email) {
+      setEmail(user.email);
+    }
+  }, [needsUnlock, user?.email]);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [handle, setHandle] = useState('');
@@ -140,6 +148,13 @@ export function Auth({ onClose }: AuthProps) {
 
       {error && <div className="mb-4 rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-red-200">{error}</div>}
       {message && <div className="mb-4 rounded-lg border border-accent-gold/30 bg-accent-gold/10 px-3 py-2 text-accent-gold">{message}</div>}
+
+      {needsUnlock && (
+        <div className="mb-4 flex items-start gap-2 rounded-lg border border-accent-gold/30 bg-accent-gold/10 px-3 py-2 text-accent-gold">
+          <ShieldAlert size={18} className="mt-0.5 shrink-0" />
+          <span>Your encryption key is locked. Please sign in again to unlock your data.</span>
+        </div>
+      )}
 
       {mode === 'login' && (
         <form onSubmit={handleLogin} className="space-y-4">

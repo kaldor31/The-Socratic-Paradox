@@ -46,7 +46,9 @@ function App() {
   }, [isLoading, isAuthenticated]);
 
   useEffect(() => {
+    console.log('[app] auth state', { isLoading, encryptionLoading, isAuthenticated, isUnlocked });
     if (!isLoading && !encryptionLoading && isAuthenticated && !isUnlocked) {
+      console.log('[app] showing auth modal because key is locked');
       setShowAuth(true);
     }
   }, [isLoading, encryptionLoading, isAuthenticated, isUnlocked]);

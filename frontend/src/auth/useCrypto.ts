@@ -8,7 +8,10 @@ export function useCrypto() {
   const encrypt = useCallback(
     async (plaintext: string): Promise<string> => {
       const key = getDataKey();
-      if (!key) throw new Error('Encryption key not available');
+      if (!key) {
+        console.error('[useCrypto] encrypt: key not available');
+        throw new Error('Encryption key not available');
+      }
       return encryptData(plaintext, key);
     },
     [getDataKey]
@@ -17,7 +20,10 @@ export function useCrypto() {
   const decrypt = useCallback(
     async (ciphertext: string): Promise<string> => {
       const key = getDataKey();
-      if (!key) throw new Error('Encryption key not available');
+      if (!key) {
+        console.error('[useCrypto] decrypt: key not available');
+        throw new Error('Encryption key not available');
+      }
       return decryptData(ciphertext, key);
     },
     [getDataKey]

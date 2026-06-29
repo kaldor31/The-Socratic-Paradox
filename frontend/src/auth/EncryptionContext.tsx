@@ -69,15 +69,27 @@ export function EncryptionProvider({ children }: { children: ReactNode }) {
 
   const unlock = useCallback(async (password: string, userOverride?: { encryptionSalt?: string | null; encryptedDataKey?: string | null }) => {
     const currentUser = userOverride || userRef.current;
+    console.log('[encryption] unlock called', { hasUserOverride: !!userOverride, hasUserRef: !!userRef.current, hasSalt: !!currentUser?.encryptionSalt, hasKey: !!currentUser?.encryptedDataKey });
     if (!currentUser?.encryptionSalt || !currentUser?.encryptedDataKey) {
+      console.error('[encryption] missing key material', { currentUser });
       throw new Error('No encryption key material available');
     }
-    const kek = await deriveKey(password, currentUser.encryptionSalt);
-    const key = await decryptKey(currentUser.encryptedDataKey, kek);
-    dataKeyRef.current = key;
-    setIsUnlocked(true);
-    const raw = await exportKey(key);
-    localStorage.setItem(STORAGE_KEY, raw);
+    try {
+      const kek = await deriveKey(password, currentUser.encryptionSalt);
+      const key = await decryptKey(currentUser.encryptedDataKey, kek);
+      dataKeyRef.current = key;
+      setIsUnlocked(true);
+      const raw = await exportKey(key);
+      try {
+        localStorage.setItem(STORAGE_KEY, raw);
+      } catch (storageErr) {
+        console.error('[encryption] failed to persist key to localStorage', storageErr);
+      }
+      console.log('[encryption] unlock succeeded');
+    } catch (err) {
+      console.error('[encryption] unlock failed', err);
+      throw err;
+    }
   }, []);
 
   const getDataKey = useCallback(() => dataKeyRef.current, []);

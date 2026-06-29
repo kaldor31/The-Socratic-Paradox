@@ -89,6 +89,7 @@ export function wizardReducer(state: WizardState, action: WizardAction): WizardS
           ...state.session,
           ...action.payload,
           status: 'distortions',
+          questions: state.session.questions,
         },
       };
 
@@ -108,6 +109,7 @@ export function wizardReducer(state: WizardState, action: WizardAction): WizardS
           ...state.session,
           ...action.payload,
           status: 'synthesis',
+          questions: state.session.questions,
         },
       };
 

@@ -266,9 +266,7 @@ export class SocraticService {
     const prompts = await this.getPrompts();
     const allDistortions = await this.getDistortions();
 
-    const questions = entry.status === 'interrogation'
-      ? selectPrompts(prompts, entry.thesis, DEFAULT_QUESTION_COUNT)
-      : [];
+    const questions = selectPrompts(prompts, entry.thesis, DEFAULT_QUESTION_COUNT);
 
     return {
       entryId: entry.id,

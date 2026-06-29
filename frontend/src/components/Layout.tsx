@@ -1,9 +1,10 @@
 import { useState, type ReactNode } from 'react';
-import { Sparkles, BookOpen, BarChart3, Plus, Notebook, User, Settings, Menu, X } from 'lucide-react';
+import { Sparkles, BookOpen, BarChart3, Plus, Notebook, User, Settings, Menu, X, Quote } from 'lucide-react';
 import { useAuth } from '../auth/AuthContext';
 import { useLanguage } from '../i18n/LanguageContext';
+import { useConfirm } from './ConfirmDialog';
 
-type View = 'onboarding' | 'wizard' | 'dashboard' | 'entries' | 'journal' | 'account' | 'settings' | 'auth';
+type View = 'onboarding' | 'quotes' | 'wizard' | 'dashboard' | 'entries' | 'journal' | 'account' | 'settings' | 'auth';
 
 interface LayoutProps {
   activeView: View;
@@ -15,15 +16,18 @@ interface LayoutProps {
 export function Layout({ activeView, onNavigate, onOpenAuth, children }: LayoutProps) {
   const { t } = useLanguage();
   const { user, isAuthenticated, logout } = useAuth();
+  const confirm = useConfirm();
   const [menuOpen, setMenuOpen] = useState(false);
 
   const nav = [
-    { id: 'onboarding' as View, label: t('nav.intro'), icon: Sparkles },
+    ...(isAuthenticated
+      ? [{ id: 'quotes' as View, label: t('nav.quotes'), icon: Quote }]
+      : [{ id: 'onboarding' as View, label: t('nav.intro'), icon: Sparkles }]),
     { id: 'wizard' as View, label: t('nav.newSession'), icon: Plus },
     { id: 'dashboard' as View, label: t('nav.dashboard'), icon: BarChart3 },
     { id: 'entries' as View, label: t('nav.entries'), icon: BookOpen },
     { id: 'journal' as View, label: t('nav.journal'), icon: Notebook },
-  ].filter(item => isAuthenticated || item.id === 'onboarding');
+  ];
 
   const menuItems = [
     ...nav,
@@ -34,6 +38,16 @@ export function Layout({ activeView, onNavigate, onOpenAuth, children }: LayoutP
   const handleNavigate = (view: View) => {
     setMenuOpen(false);
     onNavigate(view);
+  };
+
+  const handleLogout = async () => {
+    const ok = await confirm({
+      title: t('nav.signOut'),
+      message: t('auth.signOutConfirm'),
+      isDanger: true,
+      confirmLabel: t('nav.signOut'),
+    });
+    if (ok) logout();
   };
 
   return (
@@ -92,7 +106,7 @@ export function Layout({ activeView, onNavigate, onOpenAuth, children }: LayoutP
                     <Settings size={16} />
                   </button>
                   <button
-                    onClick={logout}
+                    onClick={handleLogout}
                     className="rounded-lg px-2 py-2 text-sm text-ink-muted transition-all hover:bg-marble-800/60 hover:text-red-400"
                   >
                     {t('nav.signOut')}
@@ -153,7 +167,7 @@ export function Layout({ activeView, onNavigate, onOpenAuth, children }: LayoutP
                 <button
                   onClick={() => {
                     setMenuOpen(false);
-                    logout();
+                    handleLogout();
                   }}
                   className="flex items-center gap-3 rounded-lg px-3 py-3 text-left text-sm font-medium text-ink-muted transition-all hover:bg-marble-800/60 hover:text-red-400"
                 >

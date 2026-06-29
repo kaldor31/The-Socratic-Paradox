@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { ArrowLeft, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, Save, Trash2 } from 'lucide-react';
+import { ChevronDown, ChevronUp, ChevronLeft, ChevronRight, Save, Trash2 } from 'lucide-react';
 import { useLanguage } from '../i18n/LanguageContext';
 import { api } from '../api/client';
 import { useConfirm } from './ConfirmDialog';
@@ -19,10 +19,6 @@ interface Category {
   prompts: Prompt[];
 }
 
-interface JournalProps {
-  onBack: () => void;
-}
-
 const localDate = (d = new Date()) => d.toLocaleDateString('en-CA');
 
 const today = localDate();
@@ -35,7 +31,7 @@ const addDays = (dateStr: string, delta: number) => {
 
 const clampToToday = (dateStr: string) => (dateStr > today ? today : dateStr);
 
-export function Journal({ onBack }: JournalProps) {
+export function Journal() {
   const { t, language } = useLanguage();
   const prompts = language === 'ru' ? (ruPrompts as { categories: Category[] }) : (enPrompts as { categories: Category[] });
   const categories = prompts.categories;
@@ -143,13 +139,7 @@ export function Journal({ onBack }: JournalProps) {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-3">
-        <button onClick={onBack} className="btn-secondary">
-          <ArrowLeft size={18} />
-          <span className="hidden sm:inline">{t('common.back')}</span>
-        </button>
-        <h2 className="font-serif text-xl font-bold sm:text-3xl">{t('journal.title')}</h2>
-      </div>
+      <h2 className="font-serif text-xl font-bold sm:text-3xl">{t('journal.title')}</h2>
 
       <div className="panel relative z-10">
         <div className="flex flex-wrap items-center gap-3">

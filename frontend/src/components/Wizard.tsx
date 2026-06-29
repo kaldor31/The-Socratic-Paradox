@@ -1,5 +1,5 @@
 import { useReducer, useCallback, useEffect } from 'react';
-import { ArrowLeft, Loader2 } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { wizardReducer, initialWizardState, WizardActions, canAdvance, isStepAccessible } from '../state/wizardMachine';
 import { api } from '../api/client';
 import { useLanguage } from '../i18n/LanguageContext';
@@ -11,10 +11,9 @@ import { SynthesisStep } from './SynthesisStep';
 interface WizardProps {
   entryId?: string;
   onFinish: () => void;
-  onBack: () => void;
 }
 
-export function Wizard({ entryId, onFinish, onBack }: WizardProps) {
+export function Wizard({ entryId, onFinish }: WizardProps) {
   const { t } = useLanguage();
   const [state, dispatch] = useReducer(wizardReducer, initialWizardState);
 
@@ -112,11 +111,7 @@ export function Wizard({ entryId, onFinish, onBack }: WizardProps) {
 
   return (
     <div className="mx-auto max-w-3xl">
-      <div className="mb-8 flex items-center justify-between">
-        <button onClick={onBack} className="btn-secondary shrink-0">
-          <ArrowLeft size={18} />
-          <span className="hidden sm:inline">{t('common.back')}</span>
-        </button>
+      <div className="mb-8 flex items-center justify-center">
         <div className="flex items-center gap-1 sm:gap-2">
           {steps.map((s, i) => {
             const accessible = isStepAccessible(state, s.id);

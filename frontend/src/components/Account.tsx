@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { ArrowLeft, Calendar, Trash2, User, Settings, LogOut } from 'lucide-react';
+import { Calendar, Trash2, User, Settings, LogOut } from 'lucide-react';
 import { api, type Entry } from '../api/client';
 import { useAuth } from '../auth/AuthContext';
 import { useLanguage } from '../i18n/LanguageContext';
@@ -7,11 +7,10 @@ import { useConfirm } from './ConfirmDialog';
 import { tDynamic } from '../i18n/translations';
 
 interface AccountProps {
-  onBack: () => void;
   onOpenSettings: () => void;
 }
 
-export function Account({ onBack, onOpenSettings }: AccountProps) {
+export function Account({ onOpenSettings }: AccountProps) {
   const { t, language } = useLanguage();
   const { user, logout } = useAuth();
   const [entries, setEntries] = useState<Entry[]>([]);
@@ -71,15 +70,19 @@ export function Account({ onBack, onOpenSettings }: AccountProps) {
     );
   }
 
+  const handleLogout = async () => {
+    const ok = await confirm({
+      title: t('nav.signOut'),
+      message: t('auth.signOutConfirm'),
+      isDanger: true,
+      confirmLabel: t('nav.signOut'),
+    });
+    if (ok) logout();
+  };
+
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-3">
-        <button onClick={onBack} className="btn-secondary">
-          <ArrowLeft size={18} />
-          <span className="hidden sm:inline">{t('common.back')}</span>
-        </button>
-        <h2 className="font-serif text-xl font-bold sm:text-3xl">{t('account.title')}</h2>
-      </div>
+      <h2 className="font-serif text-xl font-bold sm:text-3xl">{t('account.title')}</h2>
 
       <div className="panel">
         <div className="flex items-center gap-4">
@@ -97,7 +100,7 @@ export function Account({ onBack, onOpenSettings }: AccountProps) {
             <Settings size={18} />
             <span className="hidden sm:inline">{t('account.settings')}</span>
           </button>
-          <button onClick={logout} className="btn-secondary text-red-400 hover:bg-red-500/10">
+          <button onClick={handleLogout} className="btn-secondary text-red-400 hover:bg-red-500/10">
             <LogOut size={18} />
             <span className="hidden sm:inline">{t('nav.signOut')}</span>
           </button>

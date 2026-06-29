@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { ArrowLeft, Calendar, Heart, Trash2 } from 'lucide-react';
+import { Calendar, Heart, Trash2 } from 'lucide-react';
 import { api } from '../api/client';
 import type { Entry } from '../api/client';
 import { useLanguage } from '../i18n/LanguageContext';
@@ -7,11 +7,10 @@ import { useConfirm } from './ConfirmDialog';
 import { tDynamic } from '../i18n/translations';
 
 interface EntryListProps {
-  onBack: () => void;
   onResume: (entryId: string) => void;
 }
 
-export function EntryList({ onBack, onResume }: EntryListProps) {
+export function EntryList({ onResume }: EntryListProps) {
   const { t, language } = useLanguage();
   const [entries, setEntries] = useState<Entry[]>([]);
   const [loading, setLoading] = useState(true);
@@ -64,13 +63,7 @@ export function EntryList({ onBack, onResume }: EntryListProps) {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-3">
-        <button onClick={onBack} className="btn-secondary">
-          <ArrowLeft size={18} />
-          <span className="hidden sm:inline">{t('common.backToDashboard')}</span>
-        </button>
-        <h2 className="font-serif text-xl font-bold sm:text-3xl">{t('entries.title')}</h2>
-      </div>
+      <h2 className="font-serif text-xl font-bold sm:text-3xl">{t('entries.title')}</h2>
 
       {entries.length === 0 ? (
         <div className="panel text-center py-16">

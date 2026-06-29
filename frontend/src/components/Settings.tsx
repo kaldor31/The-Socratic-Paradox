@@ -1,17 +1,15 @@
 import { useState } from 'react';
-import { ArrowLeft, Globe, Check, Pencil, X, User, Mail, Lock, KeyRound } from 'lucide-react';
+import { Globe, Check, Pencil, X, User, Mail, Lock, KeyRound, Sun, Moon } from 'lucide-react';
 import { useLanguage } from '../i18n/LanguageContext';
 import { useAuth } from '../auth/AuthContext';
+import { useTheme } from '../theme/ThemeContext';
 import { api } from '../api/client';
 import type { Language } from '../i18n/translations';
 
-interface SettingsProps {
-  onBack: () => void;
-}
-
-export function Settings({ onBack }: SettingsProps) {
+export function Settings() {
   const { t, language, setLanguage } = useLanguage();
   const { user, setUser } = useAuth();
+  const { theme, toggleTheme } = useTheme();
   const [selected, setSelected] = useState<Language>(language);
   const [savingLang, setSavingLang] = useState(false);
   const [savedLang, setSavedLang] = useState(false);
@@ -132,12 +130,41 @@ export function Settings({ onBack }: SettingsProps) {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-3">
-        <button onClick={onBack} className="btn-secondary">
-          <ArrowLeft size={18} />
-          <span className="hidden sm:inline">{t('common.back')}</span>
-        </button>
-        <h2 className="font-serif text-xl font-bold sm:text-3xl">{t('settings.title')}</h2>
+      <h2 className="font-serif text-xl font-bold sm:text-3xl">{t('settings.title')}</h2>
+
+      <div className="panel">
+        <div className="mb-6 flex items-center gap-3">
+          {theme === 'light' ? <Sun className="text-accent-gold" size={24} /> : <Moon className="text-accent-gold" size={24} />}
+          <h3 className="font-serif text-xl font-semibold">{t('settings.theme')}</h3>
+        </div>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <button
+            onClick={() => theme === 'light' && toggleTheme()}
+            className={`flex items-center justify-between rounded-xl border p-4 text-left transition-all ${
+              theme === 'dark'
+                ? 'border-accent-gold bg-accent-gold/10'
+                : 'border-marble-700 bg-marble-900/50 hover:border-marble-600'
+            }`}
+          >
+            <span className="flex items-center gap-2 font-medium">
+              <Moon size={18} /> {t('settings.darkTheme')}
+            </span>
+            {theme === 'dark' && <Check size={18} className="text-accent-gold" />}
+          </button>
+          <button
+            onClick={() => theme === 'dark' && toggleTheme()}
+            className={`flex items-center justify-between rounded-xl border p-4 text-left transition-all ${
+              theme === 'light'
+                ? 'border-accent-gold bg-accent-gold/10'
+                : 'border-marble-700 bg-marble-900/50 hover:border-marble-600'
+            }`}
+          >
+            <span className="flex items-center gap-2 font-medium">
+              <Sun size={18} /> {t('settings.lightTheme')}
+            </span>
+            {theme === 'light' && <Check size={18} className="text-accent-gold" />}
+          </button>
+        </div>
       </div>
 
       <div className="panel">

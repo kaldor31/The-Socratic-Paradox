@@ -5,6 +5,42 @@
 @tailwind utilities;
 
 @layer base {
+  :root {
+    --marble-midnight: 14 12 10;
+    --marble-900: 21 19 17;
+    --marble-800: 30 27 23;
+    --marble-700: 43 39 34;
+    --marble-600: 63 58 51;
+    --accent-gold: 199 166 99;
+    --accent-rust: 168 92 50;
+    --accent-patina: 91 138 130;
+    --accent-bronze: 140 123 94;
+    --ink: 233 227 215;
+    --ink-muted: 155 148 137;
+    --ink-dim: 107 101 93;
+    --parchment: 244 240 230;
+    --parchment-dark: 216 208 192;
+    --canvas-bg: 18 18 20;
+  }
+
+  .light {
+    --marble-midnight: 245 242 235;
+    --marble-900: 255 255 255;
+    --marble-800: 247 245 240;
+    --marble-700: 237 233 224;
+    --marble-600: 216 210 197;
+    --accent-gold: 176 141 75;
+    --accent-rust: 168 92 50;
+    --accent-patina: 91 138 130;
+    --accent-bronze: 140 123 94;
+    --ink: 30 27 23;
+    --ink-muted: 92 86 77;
+    --ink-dim: 138 130 117;
+    --parchment: 232 226 214;
+    --parchment-dark: 216 208 192;
+    --canvas-bg: 247 245 240;
+  }
+
   html {
     @apply bg-marble-midnight text-ink antialiased;
     scroll-behavior: smooth;
@@ -15,12 +51,23 @@
     background-image: theme('backgroundImage.vellum'), theme('backgroundImage.stain');
   }
 
+  .light body {
+    background-image: theme('backgroundImage.vellum'),
+      radial-gradient(ellipse at 20% 30%, rgba(176, 141, 75, 0.06) 0%, transparent 50%),
+      radial-gradient(ellipse at 80% 70%, rgba(91, 138, 130, 0.05) 0%, transparent 45%);
+  }
+
   h1, h2, h3, h4 {
     @apply font-serif tracking-wide;
   }
 
   ::selection {
-    @apply bg-accent-gold/30 text-ink;
+    background: rgb(var(--accent-gold) / 0.3);
+    color: rgb(var(--ink));
+  }
+
+  .light ::selection {
+    background: rgb(var(--accent-gold) / 0.3);
   }
 }
 

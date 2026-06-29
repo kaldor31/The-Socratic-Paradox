@@ -3,7 +3,12 @@ import { Eraser, Undo2, Redo2, Trash2 } from 'lucide-react';
 
 const CANVAS_WIDTH = 800;
 const CANVAS_HEIGHT = 400;
-const BG_COLOR = '#121214';
+
+function getCanvasBg() {
+  if (typeof window === 'undefined') return '#121214';
+  const raw = getComputedStyle(document.documentElement).getPropertyValue('--canvas-bg').trim();
+  return raw ? `rgb(${raw})` : '#121214';
+}
 
 export interface JournalCanvasRef {
   getDataUrl: () => string;
@@ -35,6 +40,8 @@ export const JournalCanvas = forwardRef<JournalCanvasRef, JournalCanvasProps>(
     const [history, setHistory] = useState<HistoryItem[]>([]);
     const [historyIndex, setHistoryIndex] = useState(-1);
     const onChangeRef = useRef(onChange);
+    const bgColorRef = useRef(getCanvasBg());
+    const lastPointRef = useRef<{ x: number; y: number } | null>(null);
     onChangeRef.current = onChange;
 
     const getSnapshot = useCallback(() => {
@@ -65,9 +72,11 @@ export const JournalCanvas = forwardRef<JournalCanvasRef, JournalCanvasProps>(
       const canvas = canvasRef.current;
       const ctx = ctxRef.current;
       if (!canvas || !ctx) return;
+      const bgColor = getCanvasBg();
+      bgColorRef.current = bgColor;
       ctx.lineCap = 'round';
       ctx.lineJoin = 'round';
-      ctx.fillStyle = BG_COLOR;
+      ctx.fillStyle = bgColor;
       ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
       strokeCountRef.current = 0;
 
@@ -115,9 +124,10 @@ export const JournalCanvas = forwardRef<JournalCanvasRef, JournalCanvasProps>(
       if (!ctx) return;
       isDrawingRef.current = true;
       const { x, y } = getCoordinates(e.nativeEvent);
+      lastPointRef.current = { x, y };
       ctx.beginPath();
       ctx.moveTo(x, y);
-      ctx.strokeStyle = isEraser ? BG_COLOR : color;
+      ctx.strokeStyle = isEraser ? bgColorRef.current : color;
       ctx.lineWidth = isEraser ? brushSize * 3 : brushSize;
     };
 
@@ -127,8 +137,17 @@ export const JournalCanvas = forwardRef<JournalCanvasRef, JournalCanvasProps>(
       const ctx = ctxRef.current;
       if (!ctx) return;
       const { x, y } = getCoordinates(e.nativeEvent);
-      ctx.lineTo(x, y);
-      ctx.stroke();
+      const last = lastPointRef.current;
+      if (last) {
+        const midX = (last.x + x) / 2;
+        const midY = (last.y + y) / 2;
+        ctx.quadraticCurveTo(last.x, last.y, midX, midY);
+        ctx.stroke();
+      } else {
+        ctx.lineTo(x, y);
+        ctx.stroke();
+      }
+      lastPointRef.current = { x, y };
     };
 
     const stopDrawing = (e: React.MouseEvent | React.TouchEvent) => {
@@ -136,8 +155,15 @@ export const JournalCanvas = forwardRef<JournalCanvasRef, JournalCanvasProps>(
       if (!isDrawingRef.current) return;
       const ctx = ctxRef.current;
       if (!ctx) return;
+      const { x, y } = getCoordinates(e.nativeEvent);
+      const last = lastPointRef.current;
+      if (last) {
+        ctx.quadraticCurveTo(last.x, last.y, x, y);
+        ctx.stroke();
+      }
       ctx.closePath();
       isDrawingRef.current = false;
+      lastPointRef.current = null;
       strokeCountRef.current += 1;
       pushSnapshot();
       onChangeRef.current?.();
@@ -151,7 +177,7 @@ export const JournalCanvas = forwardRef<JournalCanvasRef, JournalCanvasProps>(
     const clear = useCallback(() => {
       const ctx = ctxRef.current;
       if (!ctx) return;
-      ctx.fillStyle = BG_COLOR;
+      ctx.fillStyle = bgColorRef.current;
       ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
       strokeCountRef.current = 0;
       pushSnapshot();
@@ -229,7 +255,8 @@ export const JournalCanvas = forwardRef<JournalCanvasRef, JournalCanvasProps>(
           onTouchStart={startDrawing}
           onTouchMove={draw}
           onTouchEnd={stopDrawing}
-          className="w-full cursor-crosshair rounded-xl border border-marble-700 bg-marble-900"
+          className="w-full cursor-crosshair rounded-xl border border-marble-700"
+          style={{ backgroundColor: 'rgb(var(--canvas-bg))' }}
         />
       </div>
     );

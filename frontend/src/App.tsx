@@ -8,15 +8,16 @@ import { Auth } from './components/Auth';
 import { Account } from './components/Account';
 import { Settings } from './components/Settings';
 import { Journal } from './components/Journal';
+import { Quotes } from './components/Quotes';
 import { useAuth } from './auth/AuthContext';
 
-type View = 'onboarding' | 'wizard' | 'dashboard' | 'entries' | 'journal' | 'account' | 'settings' | 'auth';
+type View = 'onboarding' | 'quotes' | 'wizard' | 'dashboard' | 'entries' | 'journal' | 'account' | 'settings' | 'auth';
 
-const protectedViews: View[] = ['wizard', 'dashboard', 'entries', 'journal', 'account', 'settings'];
+const protectedViews: View[] = ['wizard', 'dashboard', 'entries', 'journal', 'account', 'settings', 'quotes'];
 
 function App() {
   const { user, isLoading, isAuthenticated } = useAuth();
-  const [view, setView] = useState<View>('onboarding');
+  const [view, setView] = useState<View>(isAuthenticated ? 'journal' : 'onboarding');
   const [showAuth, setShowAuth] = useState(false);
   const [resumeEntryId, setResumeEntryId] = useState<string | null>(null);
 
@@ -25,6 +26,12 @@ function App() {
       setView('auth');
     }
   }, [showAuth]);
+
+  useEffect(() => {
+    if (!isLoading) {
+      setView(isAuthenticated ? 'journal' : 'onboarding');
+    }
+  }, [isLoading, isAuthenticated]);
 
   const handleNavigate = (newView: View) => {
     if (!isAuthenticated && protectedViews.includes(newView)) {
@@ -38,7 +45,7 @@ function App() {
 
   const handleCloseAuth = () => {
     setShowAuth(false);
-    setView(user ? 'dashboard' : 'onboarding');
+    setView(user ? 'journal' : 'onboarding');
   };
 
   if (isLoading) {
@@ -58,25 +65,25 @@ function App() {
           else setShowAuth(true);
         }} />
       )}
+      {view === 'quotes' && user && <Quotes />}
       {view === 'wizard' && user && (
         <Wizard
           entryId={resumeEntryId ?? undefined}
           onFinish={() => setView('dashboard')}
-          onBack={() => setView('onboarding')}
         />
       )}
       {view === 'dashboard' && user && (
         <Dashboard onNewEntry={() => { setResumeEntryId(null); setView('wizard'); }} onEntries={() => setView('entries')} />
       )}
       {view === 'entries' && user && (
-        <EntryList onBack={() => setView('dashboard')} onResume={(entryId) => { setResumeEntryId(entryId); setView('wizard'); }} />
+        <EntryList onResume={(entryId) => { setResumeEntryId(entryId); setView('wizard'); }} />
       )}
       {view === 'journal' && user && (
-        <Journal onBack={() => setView('dashboard')} />
+        <Journal />
       )}
       {view === 'auth' && <Auth onClose={handleCloseAuth} />}
-      {view === 'account' && user && <Account onBack={() => setView('dashboard')} onOpenSettings={() => setView('settings')} />}
-      {view === 'settings' && user && <Settings onBack={() => setView('account')} />}
+      {view === 'account' && user && <Account onOpenSettings={() => setView('settings')} />}
+      {view === 'settings' && user && <Settings />}
     </Layout>
   );
 }

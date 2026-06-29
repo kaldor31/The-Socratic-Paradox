@@ -10,26 +10,26 @@ module.exports = {
       colors: {
         // Atelier of Socrates: stone, ink, bronze, gold
         marble: {
-          midnight: '#0e0c0a',
-          900: '#151311',
-          800: '#1e1b17',
-          700: '#2b2722',
-          600: '#3f3a33',
+          midnight: 'rgb(var(--marble-midnight))',
+          900: 'rgb(var(--marble-900))',
+          800: 'rgb(var(--marble-800))',
+          700: 'rgb(var(--marble-700))',
+          600: 'rgb(var(--marble-600))',
         },
         accent: {
-          gold: '#c7a663',
-          rust: '#a85c32',
-          patina: '#5b8a82',
-          bronze: '#8c7b5e',
+          gold: 'rgb(var(--accent-gold))',
+          rust: 'rgb(var(--accent-rust))',
+          patina: 'rgb(var(--accent-patina))',
+          bronze: 'rgb(var(--accent-bronze))',
         },
         ink: {
-          DEFAULT: '#e9e3d7',
-          muted: '#9b9489',
-          dim: '#6b655d',
+          DEFAULT: 'rgb(var(--ink))',
+          muted: 'rgb(var(--ink-muted))',
+          dim: 'rgb(var(--ink-dim))',
         },
         parchment: {
-          DEFAULT: '#f4f0e6',
-          dark: '#d8d0c0',
+          DEFAULT: 'rgb(var(--parchment))',
+          dark: 'rgb(var(--parchment-dark))',
         },
       },
       fontFamily: {

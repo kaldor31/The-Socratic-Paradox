@@ -6,6 +6,7 @@ import type {
   Distortion,
   InterrogationItem,
   DistortionAnalysisItem,
+  DistortionOption,
   Entry,
   UpdateInterrogationDto,
   UpdateDistortionsDto,
@@ -77,11 +78,32 @@ function seededRandom(seed: number, max: number): number {
   return seed % Math.max(1, max);
 }
 
+function buildDistortionOptions(analysis: DistortionAnalysisItem[], allDistortions: Distortion[]): DistortionOption[] {
+  return analysis.map(a => {
+    const d = allDistortions.find(d => d.id === a.distortionId);
+    return {
+      id: a.distortionId,
+      slug: d?.slug || '',
+      label: d?.label || a.label,
+      description: d?.description || '',
+      colorAccent: d?.colorAccent || '#7c3aed',
+      occurrenceCount: d?.occurrenceCount ?? 0,
+      createdAt: d?.createdAt || new Date().toISOString(),
+      confidence: a.confidence,
+      evidence: a.evidence,
+    };
+  });
+}
+
+function buildAnswers(interrogation: InterrogationItem[]): Record<string, string> {
+  return Object.fromEntries(interrogation.map(item => [item.promptId, item.answer]));
+}
+
 function suggestDistortions(
   thesis: string,
   answers: InterrogationItem[],
   distortions: Distortion[]
-): DistortionAnalysisItem[] {
+): DistortionOption[] {
   const text = (thesis + ' ' + answers.map(a => a.answer).join(' ')).toLowerCase();
   const patterns: Record<string, string[]> = {
     catastrophizing: ['worst', 'disaster', 'horrible', 'never recover', 'everything falls'],
@@ -99,8 +121,13 @@ function suggestDistortions(
     const hits = keywords.filter(k => text.includes(k)).length;
     const confidence = Math.min(100, hits * 25 + 10);
     return {
-      distortionId: d.id,
+      id: d.id,
+      slug: d.slug,
       label: d.label,
+      description: d.description,
+      colorAccent: d.colorAccent,
+      occurrenceCount: d.occurrenceCount,
+      createdAt: d.createdAt,
       confidence,
       evidence: '',
     };
@@ -136,7 +163,8 @@ export class SocraticService {
       thesis: entry.thesis,
       questions,
       interrogation: entry.interrogation,
-      distortions: entry.distortionAnalysis,
+      answers: {},
+      distortions: [],
       synthesis: entry.synthesis,
     };
   }
@@ -173,6 +201,7 @@ export class SocraticService {
       thesis: updated.thesis,
       questions: [],
       interrogation: updated.interrogation,
+      answers: buildAnswers(updated.interrogation),
       distortions: suggestedDistortions,
       synthesis: updated.synthesis,
     };
@@ -209,7 +238,8 @@ export class SocraticService {
       thesis: updated.thesis,
       questions: [],
       interrogation: updated.interrogation,
-      distortions: updated.distortionAnalysis,
+      answers: buildAnswers(updated.interrogation),
+      distortions: buildDistortionOptions(updated.distortionAnalysis, distortions),
       synthesis: updated.synthesis,
     };
   }
@@ -218,26 +248,36 @@ export class SocraticService {
     await this.requireOwner(dto.entryId, userId);
 
     const updated = await entryRepository.updateSynthesis(dto.entryId, dto.synthesis);
+    const allDistortions = await this.getDistortions();
     return {
       entryId: updated.id,
       status: updated.status,
       thesis: updated.thesis,
       questions: [],
       interrogation: updated.interrogation,
-      distortions: updated.distortionAnalysis,
+      answers: buildAnswers(updated.interrogation),
+      distortions: buildDistortionOptions(updated.distortionAnalysis, allDistortions),
       synthesis: updated.synthesis,
     };
   }
 
   async getSession(userId: string, entryId: string): Promise<SocraticSession> {
     const entry = await this.requireOwner(entryId, userId);
+    const prompts = await this.getPrompts();
+    const allDistortions = await this.getDistortions();
+
+    const questions = entry.status === 'interrogation'
+      ? selectPrompts(prompts, entry.thesis, DEFAULT_QUESTION_COUNT)
+      : [];
+
     return {
       entryId: entry.id,
       status: entry.status,
       thesis: entry.thesis,
-      questions: [],
+      questions,
       interrogation: entry.interrogation,
-      distortions: entry.distortionAnalysis,
+      answers: buildAnswers(entry.interrogation),
+      distortions: buildDistortionOptions(entry.distortionAnalysis, allDistortions),
       synthesis: entry.synthesis,
     };
   }

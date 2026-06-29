@@ -111,6 +111,9 @@ export function wizardReducer(state: WizardState, action: WizardAction): WizardS
         },
       };
 
+    case 'SET_STEP':
+      return { ...state, step: action.payload };
+
     default:
       return state;
   }
@@ -172,4 +175,5 @@ export const WizardActions = {
   }),
   setSynthesis: (synthesis: string): WizardAction => ({ type: 'SET_SYNTHESIS', payload: synthesis }),
   complete: (session: WizardState['session']): WizardAction => ({ type: 'COMPLETE', payload: session }),
+  setStep: (step: WizardStep): WizardAction => ({ type: 'SET_STEP', payload: step }),
 };

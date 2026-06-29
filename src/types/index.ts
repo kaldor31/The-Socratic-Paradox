@@ -53,6 +53,11 @@ export interface DistortionAnalysisItem {
   evidence: string;
 }
 
+export interface DistortionOption extends Distortion {
+  confidence: number;
+  evidence: string;
+}
+
 export interface Entry {
   id: string;
   userId: string;
@@ -73,7 +78,8 @@ export interface SocraticSession {
   thesis: string;
   questions: SocraticPrompt[];
   interrogation: InterrogationItem[];
-  distortions: DistortionAnalysisItem[];
+  answers?: Record<string, string>;
+  distortions: DistortionOption[];
   synthesis?: string;
 }
 

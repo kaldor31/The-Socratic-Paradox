@@ -17,6 +17,7 @@ function App() {
   const { user, isLoading, isAuthenticated } = useAuth();
   const [view, setView] = useState<View>('onboarding');
   const [showAuth, setShowAuth] = useState(false);
+  const [resumeEntryId, setResumeEntryId] = useState<string | null>(null);
 
   useEffect(() => {
     if (showAuth) {
@@ -30,6 +31,7 @@ function App() {
       return;
     }
     if (newView !== 'auth') setShowAuth(false);
+    if (newView === 'wizard') setResumeEntryId(null);
     setView(newView);
   };
 
@@ -49,16 +51,24 @@ function App() {
   return (
     <Layout activeView={view} onNavigate={handleNavigate} onOpenAuth={() => setShowAuth(true)}>
       {view === 'onboarding' && (
-        <Onboarding onStart={() => (isAuthenticated ? setView('wizard') : setShowAuth(true))} />
+        <Onboarding onStart={() => {
+          setResumeEntryId(null);
+          if (isAuthenticated) setView('wizard');
+          else setShowAuth(true);
+        }} />
       )}
       {view === 'wizard' && user && (
-        <Wizard onFinish={() => setView('dashboard')} onBack={() => setView('onboarding')} />
+        <Wizard
+          entryId={resumeEntryId ?? undefined}
+          onFinish={() => setView('dashboard')}
+          onBack={() => setView('onboarding')}
+        />
       )}
       {view === 'dashboard' && user && (
-        <Dashboard onNewEntry={() => setView('wizard')} onEntries={() => setView('entries')} />
+        <Dashboard onNewEntry={() => { setResumeEntryId(null); setView('wizard'); }} onEntries={() => setView('entries')} />
       )}
       {view === 'entries' && user && (
-        <EntryList onBack={() => setView('dashboard')} onResume={() => setView('wizard')} />
+        <EntryList onBack={() => setView('dashboard')} onResume={(entryId) => { setResumeEntryId(entryId); setView('wizard'); }} />
       )}
       {view === 'auth' && <Auth onClose={handleCloseAuth} />}
       {view === 'account' && user && <Account onBack={() => setView('dashboard')} onOpenSettings={() => setView('settings')} />}

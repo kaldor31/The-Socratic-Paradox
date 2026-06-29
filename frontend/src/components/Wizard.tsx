@@ -1,4 +1,4 @@
-import { useReducer, useCallback } from 'react';
+import { useReducer, useCallback, useEffect } from 'react';
 import { ArrowLeft, Loader2 } from 'lucide-react';
 import { wizardReducer, initialWizardState, WizardActions, canAdvance } from '../state/wizardMachine';
 import { api } from '../api/client';
@@ -9,13 +9,28 @@ import { DistortionsStep } from './DistortionsStep';
 import { SynthesisStep } from './SynthesisStep';
 
 interface WizardProps {
+  entryId?: string;
   onFinish: () => void;
   onBack: () => void;
 }
 
-export function Wizard({ onFinish, onBack }: WizardProps) {
+export function Wizard({ entryId, onFinish, onBack }: WizardProps) {
   const { t } = useLanguage();
   const [state, dispatch] = useReducer(wizardReducer, initialWizardState);
+
+  useEffect(() => {
+    if (!entryId) return;
+    dispatch(WizardActions.setLoading(true));
+    api.getSession(entryId)
+      .then(({ session }) => {
+        dispatch(WizardActions.initSession({ ...session, synthesis: session.synthesis || '' }));
+      })
+      .catch(err => {
+        const message = err instanceof Error ? err.message : t('common.error');
+        dispatch(WizardActions.setError(message));
+      })
+      .finally(() => dispatch(WizardActions.setLoading(false)));
+  }, [entryId, t]);
 
   const handleError = useCallback((err: unknown) => {
     const message = err instanceof Error ? err.message : t('common.error');
@@ -23,6 +38,10 @@ export function Wizard({ onFinish, onBack }: WizardProps) {
   }, [t]);
 
   const handleThesisSubmit = async (thesis: string) => {
+    if (state.session.entryId) {
+      dispatch(WizardActions.setStep('interrogation'));
+      return;
+    }
     dispatch(WizardActions.setLoading(true));
     try {
       const { session } = await api.createSession({ thesis });
@@ -33,6 +52,10 @@ export function Wizard({ onFinish, onBack }: WizardProps) {
   };
 
   const handleInterrogationSubmit = async () => {
+    if (state.session.status === 'distortions' || state.session.status === 'synthesis') {
+      dispatch(WizardActions.setStep('distortions'));
+      return;
+    }
     dispatch(WizardActions.setLoading(true));
     try {
       const { session } = await api.submitInterrogation({
@@ -46,6 +69,10 @@ export function Wizard({ onFinish, onBack }: WizardProps) {
   };
 
   const handleDistortionsSubmit = async () => {
+    if (state.session.status === 'synthesis') {
+      dispatch(WizardActions.setStep('synthesis'));
+      return;
+    }
     dispatch(WizardActions.setLoading(true));
     try {
       const { session } = await api.submitDistortions({
@@ -56,7 +83,6 @@ export function Wizard({ onFinish, onBack }: WizardProps) {
           evidence: d.evidence,
         })),
       });
-      dispatch(WizardActions.setSynthesis(session.synthesis));
       dispatch(WizardActions.complete(session));
     } catch (err) {
       handleError(err);
@@ -93,7 +119,11 @@ export function Wizard({ onFinish, onBack }: WizardProps) {
         </button>
         <div className="flex items-center gap-2">
           {steps.map((s, i) => (
-            <div key={s.id} className="flex items-center gap-2">
+            <button
+              key={s.id}
+              onClick={() => dispatch(WizardActions.setStep(s.id))}
+              className="flex items-center gap-2 rounded-lg p-1 transition-colors hover:bg-marble-800"
+            >
               <span
                 className={`flex h-8 w-8 items-center justify-center rounded-full text-sm font-bold ${
                   s.id === state.step || i < steps.findIndex(x => x.id === state.step)
@@ -106,7 +136,7 @@ export function Wizard({ onFinish, onBack }: WizardProps) {
               <span className={`hidden text-sm sm:inline ${s.id === state.step ? 'text-ink' : 'text-ink-muted'}`}>
                 {s.label}
               </span>
-            </div>
+            </button>
           ))}
         </div>
       </div>

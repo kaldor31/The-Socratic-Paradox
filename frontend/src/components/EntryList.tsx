@@ -7,7 +7,7 @@ import { tDynamic } from '../i18n/translations';
 
 interface EntryListProps {
   onBack: () => void;
-  onResume: () => void;
+  onResume: (entryId: string) => void;
 }
 
 export function EntryList({ onBack, onResume }: EntryListProps) {
@@ -89,7 +89,7 @@ export function EntryList({ onBack, onResume }: EntryListProps) {
                 </div>
               </div>
               <div className="flex items-center gap-2">
-                <button onClick={onResume} className="btn-secondary text-xs">
+                <button onClick={() => onResume(entry.id)} className="btn-secondary text-xs">
                   {t('entries.resume')}
                 </button>
                 <button

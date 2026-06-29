@@ -53,4 +53,5 @@ export type WizardAction =
   | { type: 'SET_DISTORTION'; payload: DistortionOption }
   | { type: 'ADVANCE_TO_DISTORTIONS'; payload: WizardSession }
   | { type: 'SET_SYNTHESIS'; payload: string }
-  | { type: 'COMPLETE'; payload: WizardSession };
+  | { type: 'COMPLETE'; payload: WizardSession }
+  | { type: 'SET_STEP'; payload: WizardStep };

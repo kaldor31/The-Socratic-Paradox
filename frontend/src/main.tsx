@@ -8,12 +8,12 @@ import { ConfirmProvider } from './components/ConfirmDialog';
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
-    <LanguageProvider>
-      <ConfirmProvider>
-        <AuthProvider>
+    <AuthProvider>
+      <LanguageProvider>
+        <ConfirmProvider>
           <App />
-        </AuthProvider>
-      </ConfirmProvider>
-    </LanguageProvider>
+        </ConfirmProvider>
+      </LanguageProvider>
+    </AuthProvider>
   </React.StrictMode>
 );

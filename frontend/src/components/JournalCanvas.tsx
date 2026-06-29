@@ -41,6 +41,7 @@ export const JournalCanvas = forwardRef<JournalCanvasRef, JournalCanvasProps>(
     const [history, setHistory] = useState<HistoryItem[]>([]);
     const [historyIndex, setHistoryIndex] = useState(-1);
     const onChangeRef = useRef(onChange);
+    const skipOnChangeRef = useRef(false);
     const bgColorRef = useRef(getCanvasBg());
     const lastPointRef = useRef<{ x: number; y: number } | null>(null);
     onChangeRef.current = onChange;
@@ -69,6 +70,9 @@ export const JournalCanvas = forwardRef<JournalCanvasRef, JournalCanvasProps>(
         return next;
       });
       setHistoryIndex(prev => prev + 1);
+      if (!skipOnChangeRef.current) {
+        onChangeRef.current?.();
+      }
     }, [getSnapshot, historyIndex]);
 
     const resetCanvas = useCallback(() => {
@@ -102,6 +106,7 @@ export const JournalCanvas = forwardRef<JournalCanvasRef, JournalCanvasProps>(
       ctx.lineJoin = 'round';
       ctx.imageSmoothingEnabled = true;
       ctx.imageSmoothingQuality = 'high';
+      skipOnChangeRef.current = true;
       resetCanvas();
 
       if (initialDrawing) {
@@ -112,9 +117,11 @@ export const JournalCanvas = forwardRef<JournalCanvasRef, JournalCanvasProps>(
           const snapshot = ctx.getImageData(0, 0, canvas.width, canvas.height);
           setHistory([{ data: snapshot, strokeCount: 1 }]);
           setHistoryIndex(0);
-          onChangeRef.current?.();
+          skipOnChangeRef.current = false;
         };
         img.src = initialDrawing;
+      } else {
+        skipOnChangeRef.current = false;
       }
     }, [initialDrawing, resetCanvas]);
 

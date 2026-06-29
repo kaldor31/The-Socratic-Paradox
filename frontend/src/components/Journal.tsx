@@ -94,7 +94,6 @@ export function Journal() {
       const { entry } = await api.upsertJournalEntry({ entryDate: date, answers, drawing });
       if (!entry) throw new Error('Failed to save journal entry');
       setEntryId(entry.id);
-      setInitialDrawing(entry.drawing);
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
     setIsDirty(false);

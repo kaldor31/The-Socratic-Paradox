@@ -204,7 +204,7 @@ export function Journal() {
             <h3 className="font-serif text-xl font-semibold">{t('journal.drawing')}</h3>
             <p className="mt-1 text-sm text-ink-muted">{t('journal.drawingHint')}</p>
             <div className="mt-4">
-              <JournalCanvas ref={canvasRef} initialDrawing={initialDrawing} onChange={handleDrawingChange} />
+              <JournalCanvas ref={canvasRef} initialDrawing={initialDrawing} onChange={handleDrawingChange} storageKey={`sp-canvas-${date}`} />
             </div>
           </div>
 

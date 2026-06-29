@@ -22,6 +22,7 @@ export interface JournalCanvasRef {
 interface JournalCanvasProps {
   initialDrawing?: string;
   onChange?: () => void;
+  storageKey?: string;
 }
 
 interface HistoryItem {
@@ -30,7 +31,7 @@ interface HistoryItem {
 }
 
 export const JournalCanvas = forwardRef<JournalCanvasRef, JournalCanvasProps>(
-  function JournalCanvas({ initialDrawing, onChange }, ref) {
+  function JournalCanvas({ initialDrawing, onChange, storageKey }, ref) {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const ctxRef = useRef<CanvasRenderingContext2D | null>(null);
     const isDrawingRef = useRef(false);
@@ -40,8 +41,13 @@ export const JournalCanvas = forwardRef<JournalCanvasRef, JournalCanvasProps>(
     const [isEraser, setIsEraser] = useState(false);
     const [history, setHistory] = useState<HistoryItem[]>([]);
     const [historyIndex, setHistoryIndex] = useState(-1);
+    const historyRef = useRef(history);
+    const historyIndexRef = useRef(historyIndex);
+    historyRef.current = history;
+    historyIndexRef.current = historyIndex;
     const onChangeRef = useRef(onChange);
     const skipOnChangeRef = useRef(false);
+    const saveTimeoutRef = useRef<number | null>(null);
     const bgColorRef = useRef(getCanvasBg());
     const lastPointRef = useRef<{ x: number; y: number } | null>(null);
     onChangeRef.current = onChange;
@@ -64,16 +70,17 @@ export const JournalCanvas = forwardRef<JournalCanvasRef, JournalCanvasProps>(
     const pushSnapshot = useCallback(() => {
       const snapshot = getSnapshot();
       if (!snapshot) return;
-      setHistory(prev => {
-        const next = prev.slice(0, historyIndex + 1);
-        next.push({ data: snapshot, strokeCount: strokeCountRef.current });
-        return next;
-      });
-      setHistoryIndex(prev => prev + 1);
+      const next = history.slice(0, historyIndex + 1);
+      next.push({ data: snapshot, strokeCount: strokeCountRef.current });
+      if (next.length > 30) {
+        next.shift();
+      }
+      setHistory(next);
+      setHistoryIndex(next.length - 1);
       if (!skipOnChangeRef.current) {
         onChangeRef.current?.();
       }
-    }, [getSnapshot, historyIndex]);
+    }, [getSnapshot, history, historyIndex]);
 
     const resetCanvas = useCallback(() => {
       const canvas = canvasRef.current;
@@ -92,6 +99,63 @@ export const JournalCanvas = forwardRef<JournalCanvasRef, JournalCanvasProps>(
       setHistoryIndex(0);
     }, []);
 
+    const loadHistoryFromStorage = useCallback(async () => {
+      if (!storageKey) return null;
+      const raw = localStorage.getItem(storageKey);
+      if (!raw) return null;
+      try {
+        const parsed = JSON.parse(raw) as { index: number; items: { strokeCount: number; dataUrl: string }[] };
+        const items: HistoryItem[] = [];
+        for (const entry of parsed.items) {
+          const data = await new Promise<ImageData>((resolve, reject) => {
+            const img = new Image();
+            img.onload = () => {
+              const temp = document.createElement('canvas');
+              temp.width = CANVAS_WIDTH * DPR;
+              temp.height = CANVAS_HEIGHT * DPR;
+              const tctx = temp.getContext('2d');
+              if (!tctx) return reject(new Error('No context'));
+              tctx.drawImage(img, 0, 0);
+              resolve(tctx.getImageData(0, 0, temp.width, temp.height));
+            };
+            img.onerror = reject;
+            img.src = entry.dataUrl;
+          });
+          items.push({ data, strokeCount: entry.strokeCount });
+        }
+        return { index: parsed.index, items };
+      } catch {
+        return null;
+      }
+    }, [storageKey]);
+
+    const saveHistoryToStorage = useCallback(() => {
+      if (!storageKey) return;
+      if (saveTimeoutRef.current) window.clearTimeout(saveTimeoutRef.current);
+      saveTimeoutRef.current = window.setTimeout(() => {
+        const items = historyRef.current;
+        const index = historyIndexRef.current;
+        if (items.length === 0) {
+          localStorage.removeItem(storageKey);
+          return;
+        }
+        const payload = items.map(item => {
+          const temp = document.createElement('canvas');
+          temp.width = item.data.width;
+          temp.height = item.data.height;
+          const tctx = temp.getContext('2d');
+          if (!tctx) return null;
+          tctx.putImageData(item.data, 0, 0);
+          return { strokeCount: item.strokeCount, dataUrl: temp.toDataURL('image/png') };
+        });
+        try {
+          localStorage.setItem(storageKey, JSON.stringify({ index, items: payload }));
+        } catch {
+          // ignore quota errors
+        }
+      }, 300);
+    }, [storageKey]);
+
     useEffect(() => {
       const canvas = canvasRef.current;
       if (!canvas) return;
@@ -107,23 +171,45 @@ export const JournalCanvas = forwardRef<JournalCanvasRef, JournalCanvasProps>(
       ctx.imageSmoothingEnabled = true;
       ctx.imageSmoothingQuality = 'high';
       skipOnChangeRef.current = true;
-      resetCanvas();
 
-      if (initialDrawing) {
-        const img = new Image();
-        img.onload = () => {
-          ctx.drawImage(img, 0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
-          strokeCountRef.current = 1;
-          const snapshot = ctx.getImageData(0, 0, canvas.width, canvas.height);
-          setHistory([{ data: snapshot, strokeCount: 1 }]);
-          setHistoryIndex(0);
-          skipOnChangeRef.current = false;
-        };
-        img.src = initialDrawing;
-      } else {
+      (async () => {
+        const stored = await loadHistoryFromStorage();
+        if (stored) {
+          ctx.fillStyle = getCanvasBg();
+          ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+          const item = stored.items[stored.index];
+          if (item) {
+            ctx.putImageData(item.data, 0, 0);
+            strokeCountRef.current = item.strokeCount;
+          }
+          setHistory(stored.items);
+          setHistoryIndex(stored.index);
+        } else {
+          resetCanvas();
+          if (initialDrawing) {
+            const img = new Image();
+            img.onload = () => {
+              ctx.drawImage(img, 0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+              strokeCountRef.current = 1;
+              const snapshot = ctx.getImageData(0, 0, canvas.width, canvas.height);
+              setHistory([{ data: snapshot, strokeCount: 1 }]);
+              setHistoryIndex(0);
+              skipOnChangeRef.current = false;
+            };
+            img.src = initialDrawing;
+            return;
+          }
+        }
         skipOnChangeRef.current = false;
-      }
-    }, [initialDrawing, resetCanvas]);
+      })();
+    }, [initialDrawing, resetCanvas, loadHistoryFromStorage]);
+
+    useEffect(() => {
+      saveHistoryToStorage();
+      return () => {
+        if (saveTimeoutRef.current) window.clearTimeout(saveTimeoutRef.current);
+      };
+    }, [history, historyIndex, saveHistoryToStorage]);
 
     const getCoordinates = (e: PointerEvent) => {
       const canvas = canvasRef.current;
@@ -151,15 +237,10 @@ export const JournalCanvas = forwardRef<JournalCanvasRef, JournalCanvasProps>(
       ctx.lineJoin = 'round';
       ctx.strokeStyle = isEraser ? bgColorRef.current : color;
       ctx.lineWidth = isEraser ? brushSize * 3 : brushSize;
-      if (isEraser) {
-        ctx.shadowBlur = 0;
-        ctx.shadowColor = 'transparent';
-      } else {
-        ctx.shadowBlur = Math.max(2, brushSize * 0.6);
-        ctx.shadowColor = 'rgba(0,0,0,0.18)';
-        ctx.shadowOffsetX = 1;
-        ctx.shadowOffsetY = 1;
-      }
+      ctx.shadowBlur = 0;
+      ctx.shadowColor = 'transparent';
+      ctx.shadowOffsetX = 0;
+      ctx.shadowOffsetY = 0;
     };
 
     const draw = (e: React.PointerEvent<HTMLCanvasElement>) => {
@@ -169,15 +250,13 @@ export const JournalCanvas = forwardRef<JournalCanvasRef, JournalCanvasProps>(
       if (!ctx) return;
       const { x, y } = getCoordinates(e.nativeEvent);
       const last = lastPointRef.current;
-      if (last) {
-        const midX = (last.x + x) / 2;
-        const midY = (last.y + y) / 2;
-        ctx.quadraticCurveTo(last.x, last.y, midX, midY);
-        ctx.stroke();
-      } else {
-        ctx.lineTo(x, y);
-        ctx.stroke();
-      }
+      if (!last) return;
+      const midX = (last.x + x) / 2;
+      const midY = (last.y + y) / 2;
+      ctx.beginPath();
+      ctx.moveTo(last.x, last.y);
+      ctx.quadraticCurveTo(last.x, last.y, midX, midY);
+      ctx.stroke();
       lastPointRef.current = { x, y };
     };
 
@@ -190,6 +269,8 @@ export const JournalCanvas = forwardRef<JournalCanvasRef, JournalCanvasProps>(
       const { x, y } = getCoordinates(e.nativeEvent);
       const last = lastPointRef.current;
       if (last) {
+        ctx.beginPath();
+        ctx.moveTo(last.x, last.y);
         ctx.quadraticCurveTo(last.x, last.y, x, y);
         ctx.stroke();
       }

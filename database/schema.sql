@@ -78,4 +78,15 @@ CREATE TABLE IF NOT EXISTS socratic_prompts (
     created_at      TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
+CREATE TABLE IF NOT EXISTS journal_entries (
+    id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id         UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    entry_date      DATE NOT NULL,
+    answers         JSONB NOT NULL DEFAULT '{}'::jsonb,
+    drawing         TEXT,
+    created_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
+    UNIQUE(user_id, entry_date)
+);
+
 COMMIT;

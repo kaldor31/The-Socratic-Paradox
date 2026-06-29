@@ -1,0 +1,88 @@
+{
+  "categories": [
+    {
+      "slug": "daily",
+      "title": "Daily Reflection",
+      "prompts": [
+        {
+          "slug": "whatOccupies",
+          "text": "What is occupying me most right now?"
+        },
+        {
+          "slug": "smallVictory",
+          "text": "What small victory did I achieve today?"
+        },
+        {
+          "slug": "betterTomorrow",
+          "text": "What could make tomorrow a little better?"
+        },
+        {
+          "slug": "obstacles",
+          "text": "What obstacles did I face today?"
+        },
+        {
+          "slug": "memorable",
+          "text": "What was the most memorable part of today?"
+        },
+        {
+          "slug": "energy",
+          "text": "What drained my energy today? What restored it?"
+        },
+        {
+          "slug": "proud",
+          "text": "What achievement am I proud of today?"
+        }
+      ]
+    },
+    {
+      "slug": "relationships",
+      "title": "Relationships",
+      "prompts": [
+        {
+          "slug": "relationships",
+          "text": "Briefly describe what happened between you and a significant person (mother, partner, friends, sibling, pet)."
+        }
+      ]
+    },
+    {
+      "slug": "work",
+      "title": "Work & Projects",
+      "prompts": [
+        {
+          "slug": "work",
+          "text": "Describe what happened in work and projects. What progress was made? (e.g., your job, vlog, writing a book)"
+        }
+      ]
+    },
+    {
+      "slug": "health",
+      "title": "Health & Lifestyle",
+      "prompts": [
+        {
+          "slug": "health",
+          "text": "Health and healthy lifestyle achievements (e.g., health/wellbeing, sports, nutrition)"
+        }
+      ]
+    },
+    {
+      "slug": "home",
+      "title": "Home & Space",
+      "prompts": [
+        {
+          "slug": "home",
+          "text": "Home and space improvements"
+        }
+      ]
+    },
+    {
+      "slug": "growth",
+      "title": "Personal Growth",
+      "prompts": [
+        {
+          "slug": "growth",
+          "text": "Personal growth (e.g., reading, language learning, meditation, finances, new ideas, wishlist, wake-up and sleep time)"
+        }
+      ]
+    }
+  ]
+}

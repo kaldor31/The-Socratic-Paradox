@@ -7,11 +7,12 @@ import { EntryList } from './components/EntryList';
 import { Auth } from './components/Auth';
 import { Account } from './components/Account';
 import { Settings } from './components/Settings';
+import { Journal } from './components/Journal';
 import { useAuth } from './auth/AuthContext';
 
-type View = 'onboarding' | 'wizard' | 'dashboard' | 'entries' | 'account' | 'settings' | 'auth';
+type View = 'onboarding' | 'wizard' | 'dashboard' | 'entries' | 'journal' | 'account' | 'settings' | 'auth';
 
-const protectedViews: View[] = ['wizard', 'dashboard', 'entries', 'account', 'settings'];
+const protectedViews: View[] = ['wizard', 'dashboard', 'entries', 'journal', 'account', 'settings'];
 
 function App() {
   const { user, isLoading, isAuthenticated } = useAuth();
@@ -69,6 +70,9 @@ function App() {
       )}
       {view === 'entries' && user && (
         <EntryList onBack={() => setView('dashboard')} onResume={(entryId) => { setResumeEntryId(entryId); setView('wizard'); }} />
+      )}
+      {view === 'journal' && user && (
+        <Journal onBack={() => setView('dashboard')} />
       )}
       {view === 'auth' && <Auth onClose={handleCloseAuth} />}
       {view === 'account' && user && <Account onBack={() => setView('dashboard')} onOpenSettings={() => setView('settings')} />}

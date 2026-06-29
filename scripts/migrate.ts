@@ -64,6 +64,7 @@ async function main(): Promise<void> {
     logger.info('Resetting database...');
     await client.query('DROP TABLE IF EXISTS entry_distortions CASCADE;');
     await client.query('DROP TABLE IF EXISTS entries CASCADE;');
+    await client.query('DROP TABLE IF EXISTS journal_entries CASCADE;');
     await client.query('DROP TABLE IF EXISTS socratic_prompts CASCADE;');
     await client.query('DROP TABLE IF EXISTS distortions CASCADE;');
     await client.query('DROP TABLE IF EXISTS users CASCADE;');

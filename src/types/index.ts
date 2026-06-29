@@ -110,3 +110,19 @@ export interface DashboardMetric {
   topDistortion?: { label: string; slug: string; count: number };
   sessionsByMonth: Array<{ month: string; count: number }>;
 }
+
+export interface JournalEntry {
+  id: string;
+  userId: string;
+  entryDate: string;
+  answers: Record<string, string>;
+  drawing?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface UpsertJournalEntryDto {
+  entryDate: string;
+  answers: Record<string, string>;
+  drawing?: string;
+}

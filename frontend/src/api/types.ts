@@ -109,3 +109,29 @@ export interface MeResponse {
   ok: boolean;
   user: AuthUser;
 }
+
+export interface JournalEntry {
+  id: string;
+  userId: string;
+  entryDate: string;
+  answers: Record<string, string>;
+  drawing?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface UpsertJournalEntryDto {
+  entryDate: string;
+  answers: Record<string, string>;
+  drawing?: string;
+}
+
+export interface JournalEntryResponse {
+  ok: boolean;
+  entry: JournalEntry | null;
+}
+
+export interface JournalListResponse {
+  ok: boolean;
+  entries: JournalEntry[];
+}

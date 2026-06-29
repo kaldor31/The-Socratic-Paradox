@@ -7,6 +7,7 @@ import { json } from 'express';
 
 import { dbHealth } from './db.js';
 import entriesRouter from './routes/entries.js';
+import journalRouter from './routes/journal.js';
 import authRouter from './routes/auth.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { logger } from './utils/logger.js';
@@ -30,6 +31,7 @@ app.get('/health', async (_req, res) => {
 });
 
 app.use('/api', entriesRouter);
+app.use('/api/journal', journalRouter);
 app.use('/api', authRouter);
 
 app.use((_req, res) => {

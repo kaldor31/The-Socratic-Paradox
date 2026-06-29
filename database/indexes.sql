@@ -37,4 +37,8 @@ CREATE INDEX IF NOT EXISTS idx_entries_distortion_analysis_gin
 CREATE INDEX IF NOT EXISTS idx_socratic_prompts_category
     ON socratic_prompts(category, sort_order);
 
+-- Daily journal lookup by user and date
+CREATE INDEX IF NOT EXISTS idx_journal_entries_user_id_entry_date
+    ON journal_entries(user_id, entry_date DESC);
+
 COMMIT;

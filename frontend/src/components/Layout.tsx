@@ -1,9 +1,9 @@
 import { useState, type ReactNode } from 'react';
-import { Sparkles, BookOpen, BarChart3, Plus, User, Settings, Menu, X } from 'lucide-react';
+import { Sparkles, BookOpen, BarChart3, Plus, Notebook, User, Settings, Menu, X } from 'lucide-react';
 import { useAuth } from '../auth/AuthContext';
 import { useLanguage } from '../i18n/LanguageContext';
 
-type View = 'onboarding' | 'wizard' | 'dashboard' | 'entries' | 'account' | 'settings' | 'auth';
+type View = 'onboarding' | 'wizard' | 'dashboard' | 'entries' | 'journal' | 'account' | 'settings' | 'auth';
 
 interface LayoutProps {
   activeView: View;
@@ -22,6 +22,7 @@ export function Layout({ activeView, onNavigate, onOpenAuth, children }: LayoutP
     { id: 'wizard' as View, label: t('nav.newSession'), icon: Plus },
     { id: 'dashboard' as View, label: t('nav.dashboard'), icon: BarChart3 },
     { id: 'entries' as View, label: t('nav.entries'), icon: BookOpen },
+    { id: 'journal' as View, label: t('nav.journal'), icon: Notebook },
   ].filter(item => isAuthenticated || item.id === 'onboarding');
 
   const menuItems = [

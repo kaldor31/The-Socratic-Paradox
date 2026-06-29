@@ -19,6 +19,9 @@ import type {
   AuthUser,
   AuthResponse,
   MeResponse,
+  UpsertJournalEntryDto,
+  JournalEntryResponse,
+  JournalListResponse,
 } from './types';
 
 export const API_BASE = '/api';
@@ -126,6 +129,21 @@ export const api = {
       method: 'PATCH',
       body: JSON.stringify(dto),
     }),
+
+  getJournalEntries: () =>
+    request<JournalListResponse>('/journal', { method: 'GET' }),
+
+  getJournalEntry: (date: string) =>
+    request<JournalEntryResponse>(`/journal/${date}`, { method: 'GET' }),
+
+  upsertJournalEntry: (dto: UpsertJournalEntryDto) =>
+    request<JournalEntryResponse>('/journal', {
+      method: 'POST',
+      body: JSON.stringify(dto),
+    }),
+
+  deleteJournalEntry: (id: string) =>
+    request<{ ok: boolean }>(`/journal/${id}`, { method: 'DELETE' }),
 };
 
 export type { Entry };

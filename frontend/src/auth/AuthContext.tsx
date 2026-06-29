@@ -6,10 +6,10 @@ interface AuthContextValue {
   user: AuthUser | null;
   isLoading: boolean;
   isAuthenticated: boolean;
-  login: (dto: LoginDto) => Promise<void>;
+  login: (dto: LoginDto) => Promise<AuthUser>;
   register: (dto: RegisterDto) => Promise<void>;
-  verify: (dto: VerifyDto) => Promise<void>;
-  resetPassword: (dto: ResetPasswordDto) => Promise<void>;
+  verify: (dto: VerifyDto) => Promise<AuthUser>;
+  resetPassword: (dto: ResetPasswordDto) => Promise<AuthUser>;
   logout: () => void;
   setUser: (user: AuthUser) => void;
 }
@@ -38,6 +38,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = useCallback(async (dto: LoginDto) => {
     const res = await api.login(dto);
     setUser(res.user);
+    return res.user;
   }, []);
 
   const register = useCallback(async (dto: RegisterDto) => {
@@ -47,11 +48,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const verify = useCallback(async (dto: VerifyDto) => {
     const res = await api.verify(dto);
     setUser(res.user);
+    return res.user;
   }, []);
 
   const resetPassword = useCallback(async (dto: ResetPasswordDto) => {
     const res = await api.resetPassword(dto);
     setUser(res.user);
+    return res.user;
   }, []);
 
   const logout = useCallback(async () => {

@@ -6,7 +6,7 @@ interface EncryptionContextValue {
   dataKey: CryptoKey | null;
   isUnlocked: boolean;
   getDataKey: () => CryptoKey | null;
-  unlock: (password: string) => Promise<void>;
+  unlock: (password: string, userOverride?: { encryptionSalt?: string | null; encryptedDataKey?: string | null }) => Promise<void>;
   lock: () => void;
   setDataKey: (key: CryptoKey) => void;
 }
@@ -62,8 +62,8 @@ export function EncryptionProvider({ children }: { children: ReactNode }) {
     }
   }, [user, lock]);
 
-  const unlock = useCallback(async (password: string) => {
-    const currentUser = userRef.current;
+  const unlock = useCallback(async (password: string, userOverride?: { encryptionSalt?: string | null; encryptedDataKey?: string | null }) => {
+    const currentUser = userOverride || userRef.current;
     if (!currentUser?.encryptionSalt || !currentUser?.encryptedDataKey) {
       throw new Error('No encryption key material available');
     }

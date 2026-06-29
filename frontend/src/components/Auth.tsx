@@ -36,8 +36,8 @@ export function Auth({ onClose }: AuthProps) {
     setLoading(true);
     reset();
     try {
-      await login({ email, password });
-      await unlock(password);
+      const user = await login({ email, password });
+      await unlock(password, user);
       onClose();
     } catch (err) {
       setError(err instanceof Error ? err.message : t('error.loginFailed'));
@@ -70,8 +70,8 @@ export function Auth({ onClose }: AuthProps) {
     setLoading(true);
     reset();
     try {
-      await verify({ email, code });
-      await unlock(password);
+      const user = await verify({ email, code });
+      await unlock(password, user);
       onClose();
     } catch (err) {
       setError(err instanceof Error ? err.message : t('error.verificationFailed'));
@@ -106,8 +106,8 @@ export function Auth({ onClose }: AuthProps) {
       const dek = await decryptKey(encryptedDataKey, tokenKek);
       const newKek = await deriveKey(newPassword, encryptionSalt);
       const newEncryptedDataKey = await encryptKey(dek, newKek);
-      await resetPassword({ email, token: code, newPassword, encryptedDataKey: newEncryptedDataKey });
-      await unlock(newPassword);
+      const user = await resetPassword({ email, token: code, newPassword, encryptedDataKey: newEncryptedDataKey });
+      await unlock(newPassword, user);
       onClose();
     } catch (err) {
       setError(err instanceof Error ? err.message : t('error.resetFailed'));
@@ -162,7 +162,7 @@ export function Auth({ onClose }: AuthProps) {
       {mode === 'register' && (
         <form onSubmit={handleRegister} className="space-y-4">
           {input(<Mail size={18} />, { type: 'email', placeholder: t('auth.email'), value: email, onChange: e => setEmail(e.target.value), required: true })}
-          {input(<User size={18} />, { type: 'text', placeholder: t('auth.handle'), value: handle, onChange: e => setHandle(e.target.value) })}
+          {input(<User size={18} />, { type: 'text', placeholder: t('auth.handle'), value: handle, onChange: e => setHandle(e.target.value), required: true, minLength: 3, maxLength: 32 })}
           {input(<Lock size={18} />, { type: 'password', placeholder: t('auth.password'), value: password, onChange: e => setPassword(e.target.value), required: true, minLength: 8 })}
           <button type="submit" disabled={loading} className="btn-primary w-full justify-center disabled:opacity-50">
             {loading ? t('common.loading') : t('auth.signUp')}

@@ -118,22 +118,23 @@ export const JournalCanvas = forwardRef<JournalCanvasRef, JournalCanvasProps>(
       }
     }, [initialDrawing, resetCanvas]);
 
-    const getCoordinates = (e: MouseEvent | TouchEvent) => {
+    const getCoordinates = (e: PointerEvent) => {
       const canvas = canvasRef.current;
       if (!canvas) return { x: 0, y: 0 };
       const rect = canvas.getBoundingClientRect();
-      const touch = 'touches' in e ? (e.touches[0] ?? e.changedTouches[0]) : undefined;
-      const clientX = touch ? touch.clientX : (e as MouseEvent).clientX;
-      const clientY = touch ? touch.clientY : (e as MouseEvent).clientY;
-      const x = ((clientX - rect.left) / rect.width) * CANVAS_WIDTH;
-      const y = ((clientY - rect.top) / rect.height) * CANVAS_HEIGHT;
+      const x = ((e.clientX - rect.left) / rect.width) * CANVAS_WIDTH;
+      const y = ((e.clientY - rect.top) / rect.height) * CANVAS_HEIGHT;
       return { x, y };
     };
 
-    const startDrawing = (e: React.MouseEvent | React.TouchEvent) => {
+    const startDrawing = (e: React.PointerEvent<HTMLCanvasElement>) => {
       e.preventDefault();
+      const canvas = canvasRef.current;
       const ctx = ctxRef.current;
-      if (!ctx) return;
+      if (!canvas || !ctx) return;
+      try {
+        canvas.setPointerCapture(e.pointerId);
+      } catch {}
       isDrawingRef.current = true;
       const { x, y } = getCoordinates(e.nativeEvent);
       lastPointRef.current = { x, y };
@@ -154,7 +155,7 @@ export const JournalCanvas = forwardRef<JournalCanvasRef, JournalCanvasProps>(
       }
     };
 
-    const draw = (e: React.MouseEvent | React.TouchEvent) => {
+    const draw = (e: React.PointerEvent<HTMLCanvasElement>) => {
       e.preventDefault();
       if (!isDrawingRef.current) return;
       const ctx = ctxRef.current;
@@ -173,9 +174,10 @@ export const JournalCanvas = forwardRef<JournalCanvasRef, JournalCanvasProps>(
       lastPointRef.current = { x, y };
     };
 
-    const stopDrawing = (e: React.MouseEvent | React.TouchEvent) => {
+    const stopDrawing = (e: React.PointerEvent<HTMLCanvasElement>) => {
       e.preventDefault();
       if (!isDrawingRef.current) return;
+      const canvas = canvasRef.current;
       const ctx = ctxRef.current;
       if (!ctx) return;
       const { x, y } = getCoordinates(e.nativeEvent);
@@ -184,12 +186,14 @@ export const JournalCanvas = forwardRef<JournalCanvasRef, JournalCanvasProps>(
         ctx.quadraticCurveTo(last.x, last.y, x, y);
         ctx.stroke();
       }
-      ctx.closePath();
       isDrawingRef.current = false;
       lastPointRef.current = null;
       strokeCountRef.current += 1;
       pushSnapshot();
       onChangeRef.current?.();
+      try {
+        canvas?.releasePointerCapture(e.pointerId);
+      } catch {}
     };
 
     const getDataUrl = () => {
@@ -281,13 +285,10 @@ export const JournalCanvas = forwardRef<JournalCanvasRef, JournalCanvasProps>(
           ref={canvasRef}
           width={CANVAS_WIDTH * DPR}
           height={CANVAS_HEIGHT * DPR}
-          onMouseDown={startDrawing}
-          onMouseMove={draw}
-          onMouseUp={stopDrawing}
-          onMouseLeave={stopDrawing}
-          onTouchStart={startDrawing}
-          onTouchMove={draw}
-          onTouchEnd={stopDrawing}
+          onPointerDown={startDrawing}
+          onPointerMove={draw}
+          onPointerUp={stopDrawing}
+          onPointerCancel={stopDrawing}
           className="w-full cursor-crosshair touch-none rounded-xl border border-marble-700"
           style={{ backgroundColor: 'rgb(var(--canvas-bg))' }}
         />

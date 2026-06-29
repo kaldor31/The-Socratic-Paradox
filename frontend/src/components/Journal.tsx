@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { ChevronDown, ChevronUp, ChevronLeft, ChevronRight, Save, Trash2 } from 'lucide-react';
+import { ChevronDown, ChevronUp, ChevronLeft, ChevronRight, Trash2 } from 'lucide-react';
 import { useLanguage } from '../i18n/LanguageContext';
 import { api } from '../api/client';
 import { useConfirm } from './ConfirmDialog';
@@ -211,11 +211,13 @@ export function Journal() {
 
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-center gap-3">
-              <button onClick={handleSave} disabled={saving} className="btn-primary disabled:opacity-50">
-                <Save size={18} />
-                {saving ? t('common.loading') : t('common.save')}
-              </button>
-              {saved && <span className="text-sm text-accent-gold">{t('journal.saved')}</span>}
+              {saving && (
+                <span className="inline-flex items-center gap-2 text-sm text-ink-muted">
+                  <span className="h-4 w-4 animate-spin rounded-full border-2 border-accent-gold border-t-transparent" />
+                  {t('common.loading')}
+                </span>
+              )}
+              {!saving && saved && <span className="text-sm text-accent-gold">{t('journal.saved')}</span>}
             </div>
             {entryId && (
               <button onClick={handleDelete} className="btn-secondary text-red-400 hover:bg-red-500/10">

@@ -33,9 +33,6 @@ export function Settings() {
   const { t, language, setLanguage } = useLanguage();
   const { user, setUser } = useAuth();
   const { theme, setTheme, customColors, setCustomColors, resetCustomColors } = useTheme();
-  const [selected, setSelected] = useState<Language>(language);
-  const [savingLang, setSavingLang] = useState(false);
-  const [savedLang, setSavedLang] = useState(false);
   const [langError, setLangError] = useState<string | null>(null);
 
   const [editingField, setEditingField] = useState<null | 'handle' | 'email'>(null);
@@ -53,18 +50,14 @@ export function Settings() {
   const [emailMessage, setEmailMessage] = useState<string | null>(null);
   const [emailError, setEmailError] = useState<string | null>(null);
 
-  const handleSaveLang = async () => {
-    setSavingLang(true);
+  const handleChangeLanguage = async (lang: Language) => {
+    if (lang === language) return;
     setLangError(null);
     try {
-      await api.updateLanguage(selected);
-      setLanguage(selected);
-      setSavedLang(true);
-      setTimeout(() => setSavedLang(false), 2000);
+      await api.updateLanguage(lang);
+      setLanguage(lang);
     } catch (err) {
       setLangError(err instanceof Error ? err.message : t('error.failedToSave'));
-    } finally {
-      setSavingLang(false);
     }
   };
 
@@ -235,27 +228,21 @@ export function Settings() {
           {(['en', 'ru'] as Language[]).map(lang => (
             <button
               key={lang}
-              onClick={() => setSelected(lang)}
+              onClick={() => handleChangeLanguage(lang)}
+              disabled={language === lang}
               className={`flex items-center justify-between rounded-xl border p-4 text-left transition-all ${
-                selected === lang
+                language === lang
                   ? 'border-accent-gold bg-accent-gold/10'
-                  : 'border-marble-700 bg-marble-900/50 hover:border-marble-600'
+                  : 'border-marble-700 bg-marble-900/50 hover:border-marble-600 disabled:opacity-50'
               }`}
             >
               <span className="font-medium">{lang === 'en' ? 'English' : 'Русский'}</span>
-              {selected === lang && <Check size={18} className="text-accent-gold" />}
+              {language === lang && <Check size={18} className="text-accent-gold" />}
             </button>
           ))}
         </div>
 
         {langError && <div className="mt-4 rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-red-200">{langError}</div>}
-        {savedLang && <div className="mt-4 rounded-lg border border-accent-gold/30 bg-accent-gold/10 px-3 py-2 text-accent-gold">{t('settings.saved')}</div>}
-
-        <div className="mt-6 flex justify-end">
-          <button onClick={handleSaveLang} disabled={savingLang || selected === language} className="btn-primary disabled:opacity-50">
-            {savingLang ? t('common.loading') : t('settings.save')}
-          </button>
-        </div>
       </div>
 
       <div className="panel">

@@ -48,7 +48,7 @@ export async function exportKey(key: CryptoKey): Promise<string> {
 
 export async function importDataKey(base64: string): Promise<CryptoKey> {
   const raw = base64ToArrayBuffer(base64);
-  return crypto.subtle.importKey('raw', raw, { name: 'AES-GCM', length: 256 }, false, ['encrypt', 'decrypt']);
+  return crypto.subtle.importKey('raw', raw, { name: 'AES-GCM', length: 256 }, true, ['encrypt', 'decrypt']);
 }
 
 export async function encryptKey(dataKey: CryptoKey, kek: CryptoKey): Promise<string> {
@@ -60,7 +60,7 @@ export async function encryptKey(dataKey: CryptoKey, kek: CryptoKey): Promise<st
 export async function decryptKey(encryptedKey: string, kek: CryptoKey): Promise<CryptoKey> {
   const rawBase64 = await decryptData(encryptedKey, kek);
   const raw = base64ToArrayBuffer(rawBase64);
-  return crypto.subtle.importKey('raw', raw, { name: 'AES-GCM', length: 256 }, false, ['encrypt', 'decrypt']);
+  return crypto.subtle.importKey('raw', raw, { name: 'AES-GCM', length: 256 }, true, ['encrypt', 'decrypt']);
 }
 
 export async function encryptData(plaintext: string, key: CryptoKey): Promise<string> {

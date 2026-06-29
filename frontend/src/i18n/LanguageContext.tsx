@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from 'react';
+import { useAuth } from '../auth/AuthContext';
 import type { Language, TranslationKey } from './translations';
 import { t } from './translations';
 
@@ -13,10 +14,18 @@ const LanguageContext = createContext<LanguageContextValue | null>(null);
 const STORAGE_KEY = 'sp-language';
 
 export function LanguageProvider({ children }: { children: ReactNode }) {
+  const { user } = useAuth();
   const [language, setLanguageState] = useState<Language>(() => {
     const stored = localStorage.getItem(STORAGE_KEY) as Language | null;
     return stored === 'ru' || stored === 'en' ? stored : 'en';
   });
+
+  useEffect(() => {
+    if (user && !user.isAnonymous && user.language && (user.language === 'en' || user.language === 'ru')) {
+      setLanguageState(user.language);
+      localStorage.setItem(STORAGE_KEY, user.language);
+    }
+  }, [user]);
 
   const setLanguage = useCallback((lang: Language) => {
     localStorage.setItem(STORAGE_KEY, lang);

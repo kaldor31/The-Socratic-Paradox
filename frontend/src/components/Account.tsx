@@ -3,6 +3,7 @@ import { ArrowLeft, Calendar, Trash2, User, Settings, LogOut } from 'lucide-reac
 import { api, type Entry } from '../api/client';
 import { useAuth } from '../auth/AuthContext';
 import { useLanguage } from '../i18n/LanguageContext';
+import { useConfirm } from './ConfirmDialog';
 import { tDynamic } from '../i18n/translations';
 
 interface AccountProps {
@@ -25,8 +26,16 @@ export function Account({ onBack, onOpenSettings }: AccountProps) {
       .finally(() => setLoading(false));
   }, []);
 
+  const confirm = useConfirm();
+
   const handleDelete = async (entryId: string) => {
-    if (!confirm(t('entries.deleteConfirm'))) return;
+    const ok = await confirm({
+      title: t('common.delete'),
+      message: t('entries.deleteConfirm'),
+      isDanger: true,
+      confirmLabel: t('common.delete'),
+    });
+    if (!ok) return;
     setDeletingId(entryId);
     try {
       await api.deleteEntry(entryId);
@@ -39,7 +48,13 @@ export function Account({ onBack, onOpenSettings }: AccountProps) {
   };
 
   const handleDeleteAll = async () => {
-    if (!confirm(t('account.deleteAllConfirm'))) return;
+    const ok = await confirm({
+      title: t('common.delete'),
+      message: t('account.deleteAllConfirm'),
+      isDanger: true,
+      confirmLabel: t('common.delete'),
+    });
+    if (!ok) return;
     try {
       await Promise.all(entries.map(e => api.deleteEntry(e.id)));
       setEntries([]);

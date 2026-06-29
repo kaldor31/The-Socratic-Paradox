@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { ArrowLeft, Calendar, ChevronDown, ChevronUp, Save, Trash2 } from 'lucide-react';
 import { useLanguage } from '../i18n/LanguageContext';
 import { api } from '../api/client';
+import { useConfirm } from './ConfirmDialog';
 import { JournalCanvas, JournalCanvasRef } from './JournalCanvas';
 import enPrompts from '../../../content/journalPrompts.json';
 import ruPrompts from '../../../content/journalPromptsRu.json';
@@ -103,9 +104,17 @@ export function Journal({ onBack }: JournalProps) {
     }
   };
 
+  const confirm = useConfirm();
+
   const handleDelete = async () => {
     if (!entryId) return;
-    if (!confirm(t('common.delete'))) return;
+    const ok = await confirm({
+      title: t('common.delete'),
+      message: t('common.delete'),
+      isDanger: true,
+      confirmLabel: t('common.delete'),
+    });
+    if (!ok) return;
     setLoading(true);
     try {
       await api.deleteJournalEntry(entryId);

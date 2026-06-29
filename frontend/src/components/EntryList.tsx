@@ -3,6 +3,7 @@ import { ArrowLeft, Calendar, Heart, Trash2 } from 'lucide-react';
 import { api } from '../api/client';
 import type { Entry } from '../api/client';
 import { useLanguage } from '../i18n/LanguageContext';
+import { useConfirm } from './ConfirmDialog';
 import { tDynamic } from '../i18n/translations';
 
 interface EntryListProps {
@@ -24,8 +25,16 @@ export function EntryList({ onBack, onResume }: EntryListProps) {
       .finally(() => setLoading(false));
   }, []);
 
+  const confirm = useConfirm();
+
   const handleDelete = async (entryId: string) => {
-    if (!confirm(t('entries.deleteConfirm'))) return;
+    const ok = await confirm({
+      title: t('common.delete'),
+      message: t('entries.deleteConfirm'),
+      isDanger: true,
+      confirmLabel: t('common.delete'),
+    });
+    if (!ok) return;
     setDeletingId(entryId);
     try {
       await api.deleteEntry(entryId);

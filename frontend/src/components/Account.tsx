@@ -132,8 +132,8 @@ export function Account({ onOpenSettings }: AccountProps) {
 
         <div className="grid gap-3">
           {entries.map(entry => (
-            <div key={entry.id} className="flex items-center justify-between rounded-xl border border-marble-700 bg-marble-900/50 p-4">
-              <div>
+            <div key={entry.id} className="flex items-center justify-between gap-3 rounded-xl border border-marble-700 bg-marble-900/50 p-4">
+              <div className="min-w-0">
                 <p className="font-serif font-semibold line-clamp-1">{entry.thesis}</p>
                 <p className="mt-1 flex items-center gap-1 text-xs text-ink-dim">
                   <Calendar size={12} />

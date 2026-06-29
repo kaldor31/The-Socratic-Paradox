@@ -1,8 +1,9 @@
 import { useRef, useEffect, forwardRef, useImperativeHandle, useState, useCallback } from 'react';
 import { Eraser, Undo2, Redo2, Trash2 } from 'lucide-react';
 
-const CANVAS_WIDTH = 800;
-const CANVAS_HEIGHT = 400;
+const CANVAS_WIDTH = 600;
+const CANVAS_HEIGHT = 300;
+const DPR = typeof window !== 'undefined' ? Math.min(window.devicePixelRatio || 1, 2) : 1;
 
 function getCanvasBg() {
   if (typeof window === 'undefined') return '#121214';
@@ -35,7 +36,7 @@ export const JournalCanvas = forwardRef<JournalCanvasRef, JournalCanvasProps>(
     const isDrawingRef = useRef(false);
     const strokeCountRef = useRef(0);
     const [color, setColor] = useState('#d4a85d');
-    const [brushSize, setBrushSize] = useState(3);
+    const [brushSize, setBrushSize] = useState(4);
     const [isEraser, setIsEraser] = useState(false);
     const [history, setHistory] = useState<HistoryItem[]>([]);
     const [historyIndex, setHistoryIndex] = useState(-1);
@@ -45,8 +46,10 @@ export const JournalCanvas = forwardRef<JournalCanvasRef, JournalCanvasProps>(
     onChangeRef.current = onChange;
 
     const getSnapshot = useCallback(() => {
+      const canvas = canvasRef.current;
       const ctx = ctxRef.current;
-      return ctx ? ctx.getImageData(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT) : null;
+      if (!canvas || !ctx) return null;
+      return ctx.getImageData(0, 0, canvas.width, canvas.height);
     }, []);
 
     const applySnapshot = useCallback((item: HistoryItem) => {
@@ -80,7 +83,7 @@ export const JournalCanvas = forwardRef<JournalCanvasRef, JournalCanvasProps>(
       ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
       strokeCountRef.current = 0;
 
-      const blank = ctx.getImageData(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+      const blank = ctx.getImageData(0, 0, canvas.width, canvas.height);
       setHistory([{ data: blank, strokeCount: 0 }]);
       setHistoryIndex(0);
     }, []);
@@ -88,9 +91,17 @@ export const JournalCanvas = forwardRef<JournalCanvasRef, JournalCanvasProps>(
     useEffect(() => {
       const canvas = canvasRef.current;
       if (!canvas) return;
+      canvas.width = CANVAS_WIDTH * DPR;
+      canvas.height = CANVAS_HEIGHT * DPR;
       const ctx = canvas.getContext('2d');
       if (!ctx) return;
       ctxRef.current = ctx;
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      ctx.scale(DPR, DPR);
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = 'high';
       resetCanvas();
 
       if (initialDrawing) {
@@ -98,7 +109,7 @@ export const JournalCanvas = forwardRef<JournalCanvasRef, JournalCanvasProps>(
         img.onload = () => {
           ctx.drawImage(img, 0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
           strokeCountRef.current = 1;
-          const snapshot = ctx.getImageData(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+          const snapshot = ctx.getImageData(0, 0, canvas.width, canvas.height);
           setHistory([{ data: snapshot, strokeCount: 1 }]);
           setHistoryIndex(0);
           onChangeRef.current?.();
@@ -128,8 +139,19 @@ export const JournalCanvas = forwardRef<JournalCanvasRef, JournalCanvasProps>(
       lastPointRef.current = { x, y };
       ctx.beginPath();
       ctx.moveTo(x, y);
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
       ctx.strokeStyle = isEraser ? bgColorRef.current : color;
       ctx.lineWidth = isEraser ? brushSize * 3 : brushSize;
+      if (isEraser) {
+        ctx.shadowBlur = 0;
+        ctx.shadowColor = 'transparent';
+      } else {
+        ctx.shadowBlur = Math.max(2, brushSize * 0.6);
+        ctx.shadowColor = 'rgba(0,0,0,0.18)';
+        ctx.shadowOffsetX = 1;
+        ctx.shadowOffsetY = 1;
+      }
     };
 
     const draw = (e: React.MouseEvent | React.TouchEvent) => {
@@ -211,7 +233,7 @@ export const JournalCanvas = forwardRef<JournalCanvasRef, JournalCanvasProps>(
               <button
                 key={c}
                 onClick={() => { setColor(c); setIsEraser(false); }}
-                className={`h-6 w-6 rounded-full border-2 transition-all ${color === c && !isEraser ? 'border-white scale-110' : 'border-transparent'}`}
+                className={`h-6 w-6 rounded-full border-2 transition-all ${color === c && !isEraser ? 'border-marble-700 ring-2 ring-accent-gold scale-110' : 'border-transparent'}`}
                 style={{ backgroundColor: c }}
                 aria-label={`Color ${c}`}
               />
@@ -225,6 +247,16 @@ export const JournalCanvas = forwardRef<JournalCanvasRef, JournalCanvasProps>(
             </button>
           </div>
           <div className="flex items-center gap-2">
+            <div
+              className="rounded-full border border-marble-600 shadow-sm"
+              style={{
+                width: Math.max(12, brushSize * 1.5),
+                height: Math.max(12, brushSize * 1.5),
+                backgroundColor: isEraser ? bgColorRef.current : color,
+                boxShadow: 'inset 0 0 0 1px rgba(0,0,0,0.1)',
+              }}
+              aria-hidden="true"
+            />
             <input
               type="range"
               min={1}
@@ -247,8 +279,8 @@ export const JournalCanvas = forwardRef<JournalCanvasRef, JournalCanvasProps>(
         </div>
         <canvas
           ref={canvasRef}
-          width={CANVAS_WIDTH}
-          height={CANVAS_HEIGHT}
+          width={CANVAS_WIDTH * DPR}
+          height={CANVAS_HEIGHT * DPR}
           onMouseDown={startDrawing}
           onMouseMove={draw}
           onMouseUp={stopDrawing}
@@ -256,7 +288,7 @@ export const JournalCanvas = forwardRef<JournalCanvasRef, JournalCanvasProps>(
           onTouchStart={startDrawing}
           onTouchMove={draw}
           onTouchEnd={stopDrawing}
-          className="w-full cursor-crosshair rounded-xl border border-marble-700"
+          className="w-full cursor-crosshair touch-none rounded-xl border border-marble-700"
           style={{ backgroundColor: 'rgb(var(--canvas-bg))' }}
         />
       </div>

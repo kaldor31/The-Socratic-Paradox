@@ -80,7 +80,7 @@ export function EntryList({ onResume }: EntryListProps) {
                   </h3>
                   {entry.isFavorite && <Heart size={16} className="fill-accent-patina text-accent-patina" />}
                 </div>
-                <div className="mt-2 flex items-center gap-4 text-sm text-ink-dim">
+                <div className="mt-2 flex flex-wrap items-center gap-2 text-sm text-ink-dim sm:gap-4">
                   <span className="flex items-center gap-1">
                     <Calendar size={14} />
                     {new Date(entry.createdAt).toLocaleDateString(language)}

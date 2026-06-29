@@ -24,21 +24,21 @@
   }
 
   .light {
-    --marble-midnight: 239 234 222;
-    --marble-900: 255 252 243;
-    --marble-800: 249 245 236;
-    --marble-700: 240 234 221;
-    --marble-600: 222 214 195;
+    --marble-midnight: 232 226 213;
+    --marble-900: 248 244 233;
+    --marble-800: 242 237 225;
+    --marble-700: 225 218 201;
+    --marble-600: 203 194 173;
     --accent-gold: 176 141 75;
     --accent-rust: 168 92 50;
     --accent-patina: 91 138 130;
     --accent-bronze: 140 123 94;
-    --ink: 46 39 29;
-    --ink-muted: 105 96 79;
-    --ink-dim: 147 137 116;
+    --ink: 62 55 47;
+    --ink-muted: 118 108 92;
+    --ink-dim: 158 148 130;
     --parchment: 245 239 226;
     --parchment-dark: 222 214 195;
-    --canvas-bg: 250 246 237;
+    --canvas-bg: 247 242 230;
   }
 
   html {
@@ -53,8 +53,21 @@
 
   .light body {
     background-image: theme('backgroundImage.vellum'),
-      radial-gradient(ellipse at 20% 30%, rgba(176, 141, 75, 0.06) 0%, transparent 50%),
-      radial-gradient(ellipse at 80% 70%, rgba(91, 138, 130, 0.05) 0%, transparent 45%);
+      radial-gradient(ellipse at 15% 25%, rgba(176, 141, 75, 0.05) 0%, transparent 50%),
+      radial-gradient(ellipse at 85% 75%, rgba(91, 138, 130, 0.04) 0%, transparent 45%),
+      linear-gradient(180deg, rgba(255,255,255,0.25) 0%, rgba(255,252,243,0) 50%);
+  }
+
+  .light .panel {
+    box-shadow: 0 4px 20px rgba(62, 55, 47, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.35);
+  }
+
+  .light .btn-primary {
+    box-shadow: 0 4px 14px rgba(176, 141, 75, 0.25);
+  }
+
+  .light .btn-primary:hover {
+    box-shadow: 0 6px 18px rgba(176, 141, 75, 0.35);
   }
 
   h1, h2, h3, h4 {

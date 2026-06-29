@@ -64,7 +64,7 @@ export function Layout({ activeView, onNavigate, onOpenAuth, children }: LayoutP
           </div>
 
           <div className="flex items-center gap-1 sm:gap-2">
-            <div className="hidden items-center gap-1 sm:flex sm:gap-2">
+            <div className="hidden items-center gap-1 sm:flex sm:flex-wrap sm:gap-2">
               {nav.map(item => {
                 const Icon = item.icon;
                 const active = activeView === item.id;

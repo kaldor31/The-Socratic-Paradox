@@ -45,6 +45,21 @@
     @apply focus:border-accent-gold focus:outline-none focus:ring-2 focus:ring-accent-gold/30;
   }
 
+  .date-input {
+    @apply input-field appearance-none;
+    color-scheme: dark;
+  }
+
+  input[type="date"]::-webkit-calendar-picker-indicator {
+    filter: invert(0.75) sepia(1) hue-rotate(5deg) saturate(3);
+    opacity: 0.8;
+    cursor: pointer;
+  }
+
+  input[type="date"]::-webkit-calendar-picker-indicator:hover {
+    opacity: 1;
+  }
+
   .text-gradient {
     @apply bg-gradient-to-r from-accent-rust via-accent-gold to-accent-patina bg-clip-text text-transparent;
   }

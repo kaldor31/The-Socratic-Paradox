@@ -46,18 +46,24 @@ export function Journal({ onBack }: JournalProps) {
   const canvasRef = useRef<JournalCanvasRef>(null);
   const [initialDrawing, setInitialDrawing] = useState<string | undefined>();
   const [entryId, setEntryId] = useState<string | null>(null);
+  const [drawingVersion, setDrawingVersion] = useState(0);
+  const [isDirty, setIsDirty] = useState(false);
+  const loadedRef = useRef(false);
 
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
     setError(null);
     setSaved(false);
+    setIsDirty(false);
+    loadedRef.current = false;
     api.getJournalEntry(date)
       .then(({ entry }) => {
         if (cancelled) return;
         setAnswers(entry?.answers ?? {});
         setInitialDrawing(entry?.drawing);
         setEntryId(entry?.id ?? null);
+        loadedRef.current = true;
       })
       .catch(err => setError(err instanceof Error ? err.message : t('common.error')))
       .finally(() => setLoading(false));
@@ -72,6 +78,12 @@ export function Journal({ onBack }: JournalProps) {
 
   const handleAnswerChange = (slug: string, value: string) => {
     setAnswers(prev => ({ ...prev, [slug]: value }));
+    setIsDirty(true);
+  };
+
+  const handleDrawingChange = () => {
+    setDrawingVersion(v => v + 1);
+    setIsDirty(true);
   };
 
   const toggleCategory = (slug: string) => {
@@ -97,12 +109,21 @@ export function Journal({ onBack }: JournalProps) {
         return next.sort((a, b) => b.entryDate.localeCompare(a.entryDate));
       });
       setTimeout(() => setSaved(false), 2000);
+    setIsDirty(false);
     } catch (err) {
       setError(err instanceof Error ? err.message : t('common.error'));
     } finally {
       setSaving(false);
     }
   };
+
+  useEffect(() => {
+    if (!isDirty || !loadedRef.current || loading || saving) return;
+    const timer = setTimeout(() => {
+      handleSave();
+    }, 1500);
+    return () => clearTimeout(timer);
+  }, [answers, drawingVersion, isDirty, loading, saving]);
 
   const confirm = useConfirm();
 
@@ -144,13 +165,13 @@ export function Journal({ onBack }: JournalProps) {
           <button onClick={() => setDate(addDays(date, -1))} className="btn-secondary">
             ←
           </button>
-          <div className="flex items-center gap-2">
-            <Calendar size={18} className="text-accent-gold" />
+          <div className="relative flex items-center">
+            <Calendar size={18} className="pointer-events-none absolute left-3 text-accent-gold" />
             <input
               type="date"
               value={date}
               onChange={e => setDate(e.target.value)}
-              className="input-field w-auto"
+              className="date-input pl-10 pr-3"
             />
           </div>
           <button onClick={() => setDate(addDays(date, 1))} className="btn-secondary">
@@ -207,7 +228,7 @@ export function Journal({ onBack }: JournalProps) {
             <h3 className="font-serif text-xl font-semibold">{t('journal.drawing')}</h3>
             <p className="mt-1 text-sm text-ink-muted">{t('journal.drawingHint')}</p>
             <div className="mt-4">
-              <JournalCanvas ref={canvasRef} initialDrawing={initialDrawing} />
+              <JournalCanvas ref={canvasRef} initialDrawing={initialDrawing} onChange={handleDrawingChange} />
             </div>
           </div>
 
@@ -236,18 +257,17 @@ export function Journal({ onBack }: JournalProps) {
         ) : (
           <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {entries.map(entry => (
-              <button
+              <div
                 key={entry.id}
-                onClick={() => setDate(entry.entryDate)}
-                className={`text-left rounded-xl border p-4 transition-all ${
+                className={`rounded-xl border p-4 ${
                   entry.entryDate === date
                     ? 'border-accent-gold bg-accent-gold/10'
-                    : 'border-marble-700 bg-marble-900/50 hover:border-marble-600'
+                    : 'border-marble-700 bg-marble-900/50'
                 }`}
               >
                 <p className="font-serif font-semibold text-ink">{entry.entryDate}</p>
                 <p className="text-xs text-ink-dim">{Object.keys(entry.answers).length} answers</p>
-              </button>
+              </div>
             ))}
           </div>
         )}

@@ -3,15 +3,28 @@ import type { DbClient } from '../db.js';
 import { snakeToCamel } from '../utils/snakeToCamel.js';
 import type { JournalEntry, UpsertJournalEntryDto } from '../types/index.js';
 
+function toIsoString(value: unknown): string {
+  if (!value) return '';
+  if (value instanceof Date) return value.toISOString();
+  return String(value);
+}
+
+function toDateString(value: unknown): string {
+  if (!value) return '';
+  if (value instanceof Date) return value.toISOString().split('T')[0] ?? '';
+  if (typeof value === 'string') return value.split('T')[0] ?? '';
+  return String(value);
+}
+
 function parseJournalEntry(row: Record<string, unknown>): JournalEntry {
   return {
     id: row.id as string,
     userId: row.userId as string,
-    entryDate: row.entryDate as string,
+    entryDate: toDateString(row.entryDate),
     answers: (row.answers as Record<string, string>) ?? {},
     drawing: (row.drawing as string) ?? undefined,
-    createdAt: row.createdAt as string,
-    updatedAt: row.updatedAt as string,
+    createdAt: toIsoString(row.createdAt),
+    updatedAt: toIsoString(row.updatedAt),
   };
 }
 

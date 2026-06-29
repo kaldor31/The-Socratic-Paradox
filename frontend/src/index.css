@@ -120,6 +120,20 @@
     opacity: 1;
   }
 
+  input[type="color"]::-webkit-color-swatch-wrapper {
+    padding: 0;
+  }
+
+  input[type="color"]::-webkit-color-swatch {
+    border: none;
+    border-radius: 0.5rem;
+  }
+
+  input[type="color"]::-moz-color-swatch {
+    border: none;
+    border-radius: 0.5rem;
+  }
+
   .text-gradient {
     @apply bg-gradient-to-r from-accent-rust via-accent-gold to-accent-patina bg-clip-text text-transparent;
   }

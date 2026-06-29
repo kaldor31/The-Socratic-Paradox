@@ -1,15 +1,38 @@
 import { useState } from 'react';
-import { Globe, Check, Pencil, X, User, Mail, Lock, KeyRound, Sun, Moon } from 'lucide-react';
+import { Globe, Check, Pencil, X, User, Mail, Lock, KeyRound, Sun, Moon, Palette, RotateCcw } from 'lucide-react';
 import { useLanguage } from '../i18n/LanguageContext';
 import { useAuth } from '../auth/AuthContext';
 import { useTheme } from '../theme/ThemeContext';
+import type { CustomColors } from '../theme/ThemeContext';
 import { api } from '../api/client';
 import type { Language } from '../i18n/translations';
+
+const colorKeys: (keyof CustomColors)[] = [
+  'bg', 'surface', 'surface2', 'border', 'accent', 'accentRust', 'accentPatina', 'accentBronze', 'text', 'textMuted', 'textDim', 'parchment', 'parchmentDark', 'canvasBg',
+];
+
+function ColorField({ label, value, onChange }: { label: string; value: string; onChange: (val: string) => void }) {
+  return (
+    <label className="flex items-center justify-between gap-3 rounded-lg border border-marble-700 bg-marble-900/50 p-3">
+      <span className="text-sm font-medium text-ink">{label}</span>
+      <div className="flex items-center gap-2">
+        <input
+          type="color"
+          value={value}
+          onChange={e => onChange(e.target.value)}
+          className="h-8 w-8 cursor-pointer appearance-none overflow-hidden rounded-lg border border-marble-600 bg-transparent p-0"
+          aria-label={label}
+        />
+        <span className="font-mono text-xs text-ink-muted">{value}</span>
+      </div>
+    </label>
+  );
+}
 
 export function Settings() {
   const { t, language, setLanguage } = useLanguage();
   const { user, setUser } = useAuth();
-  const { theme, toggleTheme } = useTheme();
+  const { theme, setTheme, customColors, setCustomColors, resetCustomColors } = useTheme();
   const [selected, setSelected] = useState<Language>(language);
   const [savingLang, setSavingLang] = useState(false);
   const [savedLang, setSavedLang] = useState(false);
@@ -134,12 +157,12 @@ export function Settings() {
 
       <div className="panel">
         <div className="mb-6 flex items-center gap-3">
-          {theme === 'light' ? <Sun className="text-accent-gold" size={24} /> : <Moon className="text-accent-gold" size={24} />}
+          {theme === 'light' ? <Sun className="text-accent-gold" size={24} /> : theme === 'dark' ? <Moon className="text-accent-gold" size={24} /> : <Palette className="text-accent-gold" size={24} />}
           <h3 className="font-serif text-xl font-semibold">{t('settings.theme')}</h3>
         </div>
-        <div className="grid gap-3 sm:grid-cols-2">
+        <div className="grid gap-3 sm:grid-cols-3">
           <button
-            onClick={() => theme === 'light' && toggleTheme()}
+            onClick={() => setTheme('dark')}
             className={`flex items-center justify-between rounded-xl border p-4 text-left transition-all ${
               theme === 'dark'
                 ? 'border-accent-gold bg-accent-gold/10'
@@ -152,7 +175,7 @@ export function Settings() {
             {theme === 'dark' && <Check size={18} className="text-accent-gold" />}
           </button>
           <button
-            onClick={() => theme === 'dark' && toggleTheme()}
+            onClick={() => setTheme('light')}
             className={`flex items-center justify-between rounded-xl border p-4 text-left transition-all ${
               theme === 'light'
                 ? 'border-accent-gold bg-accent-gold/10'
@@ -164,7 +187,42 @@ export function Settings() {
             </span>
             {theme === 'light' && <Check size={18} className="text-accent-gold" />}
           </button>
+          <button
+            onClick={() => setTheme('custom')}
+            className={`flex items-center justify-between rounded-xl border p-4 text-left transition-all ${
+              theme === 'custom'
+                ? 'border-accent-gold bg-accent-gold/10'
+                : 'border-marble-700 bg-marble-900/50 hover:border-marble-600'
+            }`}
+          >
+            <span className="flex items-center gap-2 font-medium">
+              <Palette size={18} /> {t('settings.customTheme')}
+            </span>
+            {theme === 'custom' && <Check size={18} className="text-accent-gold" />}
+          </button>
         </div>
+
+        {theme === 'custom' && (
+          <div className="mt-6 animate-fade-in-up">
+            <div className="mb-4 flex items-center justify-between">
+              <h4 className="font-serif text-lg font-semibold">{t('settings.customThemeTitle')}</h4>
+              <button onClick={resetCustomColors} className="btn-secondary text-sm">
+                <RotateCcw size={16} />
+                {t('settings.resetColors')}
+              </button>
+            </div>
+            <div className="grid gap-2 sm:grid-cols-2">
+              {colorKeys.map(key => (
+                <ColorField
+                  key={key}
+                  label={t(`settings.colors.${key}`)}
+                  value={customColors[key]}
+                  onChange={value => setCustomColors({ ...customColors, [key]: value })}
+                />
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
       <div className="panel">

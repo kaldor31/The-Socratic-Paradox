@@ -6,11 +6,21 @@ import { AuthProvider } from './auth/AuthContext';
 import { EncryptionProvider } from './auth/EncryptionContext';
 import { LanguageProvider } from './i18n/LanguageContext';
 import { ConfirmProvider } from './components/ConfirmDialog';
-import { ThemeProvider } from './theme/ThemeContext';
+import { ThemeProvider, applyCustomColors, DEFAULT_CUSTOM_COLORS } from './theme/ThemeContext';
 
 function applyInitialTheme() {
   if (typeof window === 'undefined') return;
   const stored = window.localStorage.getItem('sp-theme');
+  if (stored === 'custom') {
+    document.documentElement.classList.remove('light');
+    try {
+      const colors = JSON.parse(window.localStorage.getItem('sp-custom-theme') || '{}');
+      applyCustomColors(document.documentElement, { ...DEFAULT_CUSTOM_COLORS, ...colors });
+    } catch {
+      applyCustomColors(document.documentElement, DEFAULT_CUSTOM_COLORS);
+    }
+    return;
+  }
   const isLight = stored === 'light' || (!stored && window.matchMedia('(prefers-color-scheme: light)').matches);
   if (isLight) {
     document.documentElement.classList.add('light');

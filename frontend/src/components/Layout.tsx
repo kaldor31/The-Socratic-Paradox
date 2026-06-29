@@ -25,8 +25,8 @@ export function Layout({ activeView, onNavigate, onOpenAuth, children }: LayoutP
 
   return (
     <div className="min-h-screen bg-marble-midnight text-ink">
-      <nav className="sticky top-0 z-50 border-b border-marble-700 bg-marble-900/80 backdrop-blur-md">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4">
+      <nav className="sticky top-0 z-50 border-b border-marble-700 bg-marble-900/80 pt-[env(safe-area-inset-top)] backdrop-blur-md">
+        <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3 sm:py-4">
           <div className="flex items-center gap-3">
             <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-accent-rust to-accent-gold text-white shadow-glow-gold">
               <Sparkles size={18} />
@@ -88,7 +88,7 @@ export function Layout({ activeView, onNavigate, onOpenAuth, children }: LayoutP
           </div>
         </div>
       </nav>
-      <main className="mx-auto max-w-6xl px-4 py-8">{children}</main>
+      <main className="mx-auto max-w-6xl px-4 pb-[calc(2rem+env(safe-area-inset-bottom))] pt-8">{children}</main>
     </div>
   );
 }

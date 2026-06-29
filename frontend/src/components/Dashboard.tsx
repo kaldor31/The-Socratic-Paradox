@@ -3,6 +3,7 @@ import { Plus, BookOpen, Heart, TrendingUp } from 'lucide-react';
 import type { DashboardMetric } from '../state/types';
 import { api } from '../api/client';
 import { useLanguage } from '../i18n/LanguageContext';
+import { tDynamic } from '../i18n/translations';
 
 interface DashboardProps {
   onNewEntry: () => void;
@@ -10,7 +11,7 @@ interface DashboardProps {
 }
 
 export function Dashboard({ onNewEntry, onEntries }: DashboardProps) {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const [metrics, setMetrics] = useState<DashboardMetric | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -46,12 +47,12 @@ export function Dashboard({ onNewEntry, onEntries }: DashboardProps) {
 
   return (
     <div className="space-y-8">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h2 className="font-serif text-3xl font-bold">{t('dashboard.title')}</h2>
-          <p className="mt-1 text-ink-muted">{t('dashboard.subtitle')}</p>
+          <h2 className="font-serif text-2xl font-bold sm:text-3xl">{t('dashboard.title')}</h2>
+          <p className="mt-1 text-sm text-ink-muted sm:text-base">{t('dashboard.subtitle')}</p>
         </div>
-        <button onClick={onNewEntry} className="btn-primary">
+        <button onClick={onNewEntry} className="btn-primary self-start">
           <Plus size={18} />
           {t('dashboard.newSession')}
         </button>
@@ -77,7 +78,9 @@ export function Dashboard({ onNewEntry, onEntries }: DashboardProps) {
         <div className="panel">
           <p className="text-sm text-ink-muted">{t('dashboard.topDistortion')}</p>
           <p className="mt-1 font-serif text-xl font-bold text-accent-patina">
-            {metrics.topDistortion ? metrics.topDistortion.label : '—'}
+            {metrics.topDistortion
+              ? tDynamic(`distortions.${metrics.topDistortion.slug}.label`, language) ?? metrics.topDistortion.label
+              : '—'}
           </p>
           {metrics.topDistortion && (
             <p className="text-xs text-ink-dim">{metrics.topDistortion.count} {t('dashboard.occurrences')}</p>

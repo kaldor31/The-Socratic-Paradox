@@ -3,6 +3,7 @@ import { ArrowLeft, Calendar, Heart, Trash2 } from 'lucide-react';
 import { api } from '../api/client';
 import type { Entry } from '../api/client';
 import { useLanguage } from '../i18n/LanguageContext';
+import { tDynamic } from '../i18n/translations';
 
 interface EntryListProps {
   onBack: () => void;
@@ -10,7 +11,7 @@ interface EntryListProps {
 }
 
 export function EntryList({ onBack, onResume }: EntryListProps) {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const [entries, setEntries] = useState<Entry[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -83,7 +84,7 @@ export function EntryList({ onBack, onResume }: EntryListProps) {
                     {new Date(entry.createdAt).toLocaleDateString()}
                   </span>
                   <span className="rounded-full bg-marble-700 px-2 py-0.5 text-xs capitalize">
-                    {entry.status}
+                    {tDynamic(`entry.status.${entry.status}`, language) ?? entry.status}
                   </span>
                 </div>
               </div>

@@ -3,6 +3,7 @@ import { ArrowLeft, Calendar, Trash2, User, Settings, LogOut } from 'lucide-reac
 import { api, type Entry } from '../api/client';
 import { useAuth } from '../auth/AuthContext';
 import { useLanguage } from '../i18n/LanguageContext';
+import { tDynamic } from '../i18n/translations';
 
 interface AccountProps {
   onBack: () => void;
@@ -10,7 +11,7 @@ interface AccountProps {
 }
 
 export function Account({ onBack, onOpenSettings }: AccountProps) {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const { user, logout } = useAuth();
   const [entries, setEntries] = useState<Entry[]>([]);
   const [loading, setLoading] = useState(true);
@@ -38,7 +39,7 @@ export function Account({ onBack, onOpenSettings }: AccountProps) {
   };
 
   const handleDeleteAll = async () => {
-    if (!confirm('Delete all sessions? This cannot be undone.')) return;
+    if (!confirm(t('account.deleteAllConfirm'))) return;
     try {
       await Promise.all(entries.map(e => api.deleteEntry(e.id)));
       setEntries([]);
@@ -50,7 +51,7 @@ export function Account({ onBack, onOpenSettings }: AccountProps) {
   if (!user) {
     return (
       <div className="panel text-center">
-        <p className="text-ink-muted">Not signed in.</p>
+        <p className="text-ink-muted">{t('account.notSignedIn')}</p>
       </div>
     );
   }
@@ -119,7 +120,7 @@ export function Account({ onBack, onOpenSettings }: AccountProps) {
                 <p className="mt-1 flex items-center gap-1 text-xs text-ink-dim">
                   <Calendar size={12} />
                   {new Date(entry.createdAt).toLocaleDateString()}
-                  <span className="rounded-full bg-marble-700 px-2 py-0.5 capitalize">{entry.status}</span>
+                  <span className="rounded-full bg-marble-700 px-2 py-0.5 capitalize">{tDynamic(`entry.status.${entry.status}`, language) ?? entry.status}</span>
                 </p>
               </div>
               <button

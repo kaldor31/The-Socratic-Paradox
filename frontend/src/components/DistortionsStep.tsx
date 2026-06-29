@@ -3,6 +3,7 @@ import { AlertTriangle, ArrowRight } from 'lucide-react';
 import type { DistortionOption } from '../state/types';
 import { api } from '../api/client';
 import { useLanguage } from '../i18n/LanguageContext';
+import { tDynamic } from '../i18n/translations';
 
 interface DistortionsStepProps {
   distortions: DistortionOption[];
@@ -12,7 +13,7 @@ interface DistortionsStepProps {
 }
 
 export function DistortionsStep({ distortions, onChange, onSubmit, canAdvance }: DistortionsStepProps) {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const [allDistortions, setAllDistortions] = useState<DistortionOption[]>([]);
 
   useEffect(() => {
@@ -49,12 +50,12 @@ export function DistortionsStep({ distortions, onChange, onSubmit, canAdvance }:
           >
             <div className="flex items-center gap-3">
               <div
-                className="h-3 w-3 rounded-full shadow-glow-gold"
+                className="h-3 w-3 shrink-0 rounded-full shadow-glow-gold"
                 style={{ backgroundColor: d.colorAccent }}
               />
-              <h3 className="font-serif text-lg font-semibold">{d.label}</h3>
+              <h3 className="font-serif text-lg font-semibold">{tDynamic(`distortions.${d.slug}.label`, language) ?? d.label}</h3>
             </div>
-            <p className="mt-2 text-sm text-ink-muted">{d.description}</p>
+            <p className="mt-2 text-sm text-ink-muted">{tDynamic(`distortions.${d.slug}.description`, language) ?? d.description}</p>
 
             <div className="mt-4">
               <div className="flex items-center justify-between">

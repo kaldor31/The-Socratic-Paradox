@@ -8,7 +8,7 @@ interface ThesisStepProps {
 }
 
 export function ThesisStep({ thesis, onChange, onSubmit }: ThesisStepProps) {
-  const { t, language } = useLanguage();
+  const { t } = useLanguage();
   const isValid = thesis.trim().length >= 3;
 
   return (
@@ -19,7 +19,7 @@ export function ThesisStep({ thesis, onChange, onSubmit }: ThesisStepProps) {
       <textarea
         value={thesis}
         onChange={e => onChange(e.target.value)}
-        placeholder={language === 'ru' ? 'Я беспокоюсь, что...' : 'I am worried that...'}
+        placeholder={t('wizard.thesisPlaceholder')}
         className="input-field mt-6 min-h-[160px] resize-y font-serif text-lg"
       />
 

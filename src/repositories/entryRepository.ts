@@ -133,12 +133,12 @@ export class EntryRepository {
       SELECT COUNT(*)::int AS count FROM entries WHERE user_id = ${userId} AND is_favorite = true
     `;
     const topDistortionPromise = this.db`
-      SELECT d.label, COUNT(*)::int AS count
+      SELECT d.label, d.slug, COUNT(*)::int AS count
       FROM entry_distortions ed
       JOIN distortions d ON d.id = ed.distortion_id
       JOIN entries e ON e.id = ed.entry_id
       WHERE e.user_id = ${userId}
-      GROUP BY d.label
+      GROUP BY d.label, d.slug
       ORDER BY count DESC
       LIMIT 1
     `;
@@ -164,7 +164,7 @@ export class EntryRepository {
     const completedSessions = (completedRows[0]?.count as number) ?? 0;
     const favoriteSessions = (favoriteRows[0]?.count as number) ?? 0;
     const topDistortion = topRows[0]
-      ? { label: topRows[0].label as string, count: topRows[0].count as number }
+      ? { label: topRows[0].label as string, slug: topRows[0].slug as string, count: topRows[0].count as number }
       : undefined;
     const sessionsByMonth = (monthRows as { month: string; count: number }[]).map(
       r => ({ month: r.month, count: r.count })

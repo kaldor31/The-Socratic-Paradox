@@ -98,6 +98,6 @@ export interface DashboardMetric {
   totalSessions: number;
   completedSessions: number;
   favoriteSessions: number;
-  topDistortion?: { label: string; count: number };
+  topDistortion?: { label: string; slug: string; count: number };
   sessionsByMonth: Array<{ month: string; count: number }>;
 }

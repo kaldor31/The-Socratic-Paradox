@@ -26,18 +26,18 @@
 
 @layer components {
   .btn-primary {
-    @apply inline-flex items-center justify-center gap-2 rounded-xl px-6 py-3 font-serif font-semibold text-marble-midnight transition-all;
+    @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 font-serif font-semibold text-marble-midnight transition-all sm:px-6 sm:py-3;
     @apply bg-accent-gold border border-accent-gold/80;
     @apply shadow-glow-gold hover:bg-parchment hover:scale-[1.02] hover:shadow-glow-rust;
   }
 
   .btn-secondary {
-    @apply inline-flex items-center justify-center gap-2 rounded-xl px-6 py-3 font-serif font-medium text-ink transition-all;
+    @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 font-serif font-medium text-ink transition-all sm:px-6 sm:py-3;
     @apply border border-marble-600 bg-marble-800/60 hover:bg-marble-700 hover:border-accent-gold/60;
   }
 
   .panel {
-    @apply rounded-2xl border border-marble-700 bg-marble-800/80 p-6 shadow-panel backdrop-blur-sm;
+    @apply rounded-2xl border border-marble-700 bg-marble-800/80 p-4 shadow-panel backdrop-blur-sm sm:p-5 lg:p-6;
   }
 
   .input-field {

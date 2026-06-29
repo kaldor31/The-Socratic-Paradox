@@ -66,7 +66,7 @@ export function Settings({ onBack }: SettingsProps) {
         </div>
 
         {error && <div className="mt-4 rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-red-200">{error}</div>}
-        {saved && <div className="mt-4 rounded-lg border border-accent-gold/30 bg-accent-gold/10 px-3 py-2 text-accent-gold">Saved</div>}
+        {saved && <div className="mt-4 rounded-lg border border-accent-gold/30 bg-accent-gold/10 px-3 py-2 text-accent-gold">{t('settings.saved')}</div>}
 
         <div className="mt-6 flex justify-end">
           <button onClick={handleSave} disabled={saving || selected === language} className="btn-primary disabled:opacity-50">

@@ -151,23 +151,18 @@ export function Journal({ onBack }: JournalProps) {
         <h2 className="font-serif text-xl font-bold sm:text-3xl">{t('journal.title')}</h2>
       </div>
 
-      <div className="panel">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
-            <button onClick={() => setDate(addDays(date, -1))} className="btn-secondary p-2">
-              <ChevronLeft size={20} />
-            </button>
-            <CalendarPicker value={date} onChange={setDate} maxDate={today} />
-            <button
-              onClick={() => setDate(clampToToday(addDays(date, 1)))}
-              disabled={date >= today}
-              className="btn-secondary p-2 disabled:opacity-40"
-            >
-              <ChevronRight size={20} />
-            </button>
-          </div>
-          <button onClick={() => setDate(today)} className="btn-secondary text-sm">
-            {t('journal.today')}
+      <div className="panel relative z-10">
+        <div className="flex flex-wrap items-center gap-3">
+          <button onClick={() => setDate(addDays(date, -1))} className="btn-secondary p-2">
+            <ChevronLeft size={20} />
+          </button>
+          <CalendarPicker value={date} onChange={setDate} maxDate={today} locale={language} />
+          <button
+            onClick={() => setDate(clampToToday(addDays(date, 1)))}
+            disabled={date >= today}
+            className="btn-secondary p-2 disabled:opacity-40"
+          >
+            <ChevronRight size={20} />
           </button>
         </div>
       </div>

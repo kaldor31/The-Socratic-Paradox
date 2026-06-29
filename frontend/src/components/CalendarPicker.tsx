@@ -5,15 +5,14 @@ interface CalendarPickerProps {
   value: string;
   onChange: (date: string) => void;
   maxDate?: string;
+  locale?: string;
 }
-
-const daysOfWeek = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
 function localDate(d = new Date()) {
   return d.toLocaleDateString('en-CA');
 }
 
-export function CalendarPicker({ value, onChange, maxDate }: CalendarPickerProps) {
+export function CalendarPicker({ value, onChange, maxDate, locale }: CalendarPickerProps) {
   const [open, setOpen] = useState(false);
   const [viewDate, setViewDate] = useState(value);
   const ref = useRef<HTMLDivElement>(null);
@@ -38,8 +37,8 @@ export function CalendarPicker({ value, onChange, maxDate }: CalendarPickerProps
   const year = view.getFullYear();
   const month = view.getMonth();
 
-  const monthName = new Intl.DateTimeFormat(undefined, { month: 'long', year: 'numeric' }).format(view);
-  const selectedLabel = new Intl.DateTimeFormat(undefined, {
+  const monthName = new Intl.DateTimeFormat(locale, { month: 'long', year: 'numeric' }).format(view);
+  const selectedLabel = new Intl.DateTimeFormat(locale, {
     day: 'numeric',
     month: 'long',
     year: 'numeric',
@@ -47,6 +46,12 @@ export function CalendarPicker({ value, onChange, maxDate }: CalendarPickerProps
 
   const daysInMonth = new Date(year, month + 1, 0).getDate();
   const firstDay = (new Date(year, month, 1).getDay() + 6) % 7;
+
+  const daysOfWeek = Array.from({ length: 7 }, (_, i) => {
+    const fmt = new Intl.DateTimeFormat(locale, { weekday: 'narrow' });
+    // 4 Jan 2021 is Monday
+    return fmt.format(new Date(2021, 0, 4 + i));
+  });
 
   const shiftMonth = (delta: number) => {
     const d = new Date(view);

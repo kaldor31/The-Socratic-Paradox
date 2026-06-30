@@ -174,6 +174,25 @@ export const JournalCanvas = forwardRef<JournalCanvasRef, JournalCanvasProps>(
       skipOnChangeRef.current = true;
 
       (async () => {
+        if (initialDrawing) {
+          ctx.fillStyle = getCanvasBg();
+          ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+          const img = new Image();
+          img.onload = () => {
+            ctx.drawImage(img, 0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+            strokeCountRef.current = 1;
+            const snapshot = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            setHistory([{ data: snapshot, strokeCount: 1 }]);
+            setHistoryIndex(0);
+            skipOnChangeRef.current = false;
+          };
+          img.onerror = () => {
+            skipOnChangeRef.current = false;
+          };
+          img.src = initialDrawing;
+          return;
+        }
+
         const stored = await loadHistoryFromStorage();
         if (stored) {
           ctx.fillStyle = getCanvasBg();
@@ -187,19 +206,6 @@ export const JournalCanvas = forwardRef<JournalCanvasRef, JournalCanvasProps>(
           setHistoryIndex(stored.index);
         } else {
           resetCanvas();
-          if (initialDrawing) {
-            const img = new Image();
-            img.onload = () => {
-              ctx.drawImage(img, 0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
-              strokeCountRef.current = 1;
-              const snapshot = ctx.getImageData(0, 0, canvas.width, canvas.height);
-              setHistory([{ data: snapshot, strokeCount: 1 }]);
-              setHistoryIndex(0);
-              skipOnChangeRef.current = false;
-            };
-            img.src = initialDrawing;
-            return;
-          }
         }
         skipOnChangeRef.current = false;
       })();

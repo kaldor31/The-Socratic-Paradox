@@ -5,6 +5,7 @@ import { api } from '../api/client';
 import { useCrypto } from '../auth/useCrypto';
 import { useConfirm } from './ConfirmDialog';
 import { JournalCanvas, JournalCanvasRef } from './JournalCanvas';
+import type { DrawingHistoryState } from '../state/types';
 import { CalendarPicker } from './CalendarPicker';
 import enPrompts from '../../../content/journalPrompts.json';
 import ruPrompts from '../../../content/journalPromptsRu.json';
@@ -23,6 +24,18 @@ interface Category {
 const localDate = (d = new Date()) => d.toLocaleDateString('en-CA');
 
 const today = localDate();
+
+const BACKEND_HISTORY_LIMIT = 10;
+
+function truncateHistoryState(state: DrawingHistoryState): DrawingHistoryState {
+  if (state.items.length <= BACKEND_HISTORY_LIMIT) return state;
+  const start = Math.max(0, Math.min(state.index, state.items.length - BACKEND_HISTORY_LIMIT));
+  const end = Math.min(state.items.length, start + BACKEND_HISTORY_LIMIT);
+  return {
+    index: state.index - start,
+    items: state.items.slice(start, end),
+  };
+}
 
 const addDays = (dateStr: string, delta: number) => {
   const d = new Date(`${dateStr}T00:00:00`);
@@ -46,6 +59,7 @@ export function Journal() {
   const [error, setError] = useState<string | null>(null);
   const canvasRef = useRef<JournalCanvasRef>(null);
   const [initialDrawing, setInitialDrawing] = useState<string | undefined>();
+  const [initialHistory, setInitialHistory] = useState<DrawingHistoryState | undefined>();
   const [entryId, setEntryId] = useState<string | null>(null);
   const [drawingVersion, setDrawingVersion] = useState(0);
   const [isDirty, setIsDirty] = useState(false);
@@ -64,13 +78,16 @@ export function Journal() {
         try {
           const decryptedAnswers = entry?.answers ? JSON.parse(await decrypt(entry.answers)) : {};
           const decryptedDrawing = entry?.drawing ? await decrypt(entry.drawing) : undefined;
+          const decryptedHistory = entry?.drawingHistory ? JSON.parse(await decrypt(entry.drawingHistory)) : undefined;
           setAnswers(decryptedAnswers);
           setInitialDrawing(decryptedDrawing);
+          setInitialHistory(decryptedHistory);
           setEntryId(entry?.id ?? null);
         } catch {
           setError(t('common.error'));
           setAnswers({});
           setInitialDrawing(undefined);
+          setInitialHistory(undefined);
           setEntryId(null);
         }
         loadedRef.current = true;
@@ -102,9 +119,12 @@ export function Journal() {
       const drawing = canvasRef.current?.hasDrawing()
         ? canvasRef.current.getDataUrl()
         : undefined;
+      const state = canvasRef.current?.getHistoryState();
+      const backendHistory = state && state.items.length > 0 ? truncateHistoryState(state) : undefined;
       const encryptedAnswers = await encrypt(JSON.stringify(answers));
       const encryptedDrawing = drawing ? await encrypt(drawing) : undefined;
-      const { entry } = await api.upsertJournalEntry({ entryDate: date, answers: encryptedAnswers, drawing: encryptedDrawing });
+      const encryptedHistory = backendHistory ? await encrypt(JSON.stringify(backendHistory)) : undefined;
+      const { entry } = await api.upsertJournalEntry({ entryDate: date, answers: encryptedAnswers, drawing: encryptedDrawing, drawingHistory: encryptedHistory });
       if (!entry) throw new Error('Failed to save journal entry');
       setEntryId(entry.id);
       setSaved(true);
@@ -141,6 +161,7 @@ export function Journal() {
       await api.deleteJournalEntry(entryId);
       setAnswers({});
       setInitialDrawing(undefined);
+      setInitialHistory(undefined);
       setEntryId(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : t('common.error'));
@@ -217,7 +238,7 @@ export function Journal() {
             <h3 className="font-serif text-xl font-semibold">{t('journal.drawing')}</h3>
             <p className="mt-1 text-sm text-ink-muted">{t('journal.drawingHint')}</p>
             <div className="mt-4">
-              <JournalCanvas ref={canvasRef} initialDrawing={initialDrawing} onChange={handleDrawingChange} storageKey={`sp-canvas-${date}`} />
+              <JournalCanvas ref={canvasRef} initialDrawing={initialDrawing} initialHistory={initialHistory} onChange={handleDrawingChange} storageKey={`sp-canvas-${date}`} />
             </div>
           </div>
 

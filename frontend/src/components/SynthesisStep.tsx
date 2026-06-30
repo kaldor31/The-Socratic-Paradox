@@ -2,24 +2,27 @@ import { Check, ArrowRight } from 'lucide-react';
 import { useRef } from 'react';
 import { useLanguage } from '../i18n/LanguageContext';
 import { JournalCanvas, JournalCanvasRef } from './JournalCanvas';
+import type { DrawingHistoryState } from '../state/types';
 
 interface SynthesisStepProps {
   entryId: string;
   synthesis: string;
   drawing?: string;
+  drawingHistory?: DrawingHistoryState;
   thesis: string;
   onChange: (synthesis: string) => void;
-  onSubmit: (synthesis: string, drawing?: string) => void;
+  onSubmit: (synthesis: string, drawing?: string, drawingHistory?: DrawingHistoryState) => void;
   canAdvance: boolean;
 }
 
-export function SynthesisStep({ entryId, synthesis, drawing, thesis, onChange, onSubmit, canAdvance }: SynthesisStepProps) {
+export function SynthesisStep({ entryId, synthesis, drawing, drawingHistory, thesis, onChange, onSubmit, canAdvance }: SynthesisStepProps) {
   const { t } = useLanguage();
   const canvasRef = useRef<JournalCanvasRef>(null);
 
   const handleSubmit = () => {
     const canvasDrawing = canvasRef.current?.hasDrawing() ? canvasRef.current.getDataUrl() : undefined;
-    onSubmit(synthesis, canvasDrawing);
+    const history = canvasRef.current?.hasDrawing() ? canvasRef.current.getHistoryState() : undefined;
+    onSubmit(synthesis, canvasDrawing, history);
   };
 
   return (
@@ -44,6 +47,7 @@ export function SynthesisStep({ entryId, synthesis, drawing, thesis, onChange, o
         <JournalCanvas
           ref={canvasRef}
           initialDrawing={drawing}
+          initialHistory={drawingHistory}
           storageKey={entryId ? `sp-synthesis-drawing-${entryId}` : undefined}
         />
       </div>

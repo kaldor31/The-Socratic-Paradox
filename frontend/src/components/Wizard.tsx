@@ -10,7 +10,7 @@ import { ThesisStep } from './ThesisStep';
 import { InterrogationStep } from './InterrogationStep';
 import { DistortionsStep } from './DistortionsStep';
 import { SynthesisStep } from './SynthesisStep';
-import type { WizardSession, Question, DistortionOption, InterrogationItem, DistortionAnalysisItem } from '../state/types';
+import type { WizardSession, Question, DistortionOption, InterrogationItem, DistortionAnalysisItem, DrawingHistoryState } from '../state/types';
 import {
   selectPrompts,
   buildAnswers,
@@ -27,6 +27,18 @@ interface WizardProps {
 interface SocraticCatalog {
   prompts: Question[];
   distortions: DistortionOption[];
+}
+
+const BACKEND_HISTORY_LIMIT = 10;
+
+function truncateHistoryState(state: DrawingHistoryState): DrawingHistoryState {
+  if (state.items.length <= BACKEND_HISTORY_LIMIT) return state;
+  const start = Math.max(0, Math.min(state.index, state.items.length - BACKEND_HISTORY_LIMIT));
+  const end = Math.min(state.items.length, start + BACKEND_HISTORY_LIMIT);
+  return {
+    index: state.index - start,
+    items: state.items.slice(start, end),
+  };
 }
 
 function toQuestions(prompts: Prompt[]): Question[] {
@@ -62,12 +74,14 @@ export function Wizard({ entryId, onFinish }: WizardProps) {
       const distortionAnalysis: DistortionAnalysisItem[] = distortionAnalysisStr ? JSON.parse(distortionAnalysisStr) : [];
       let synthesis = '';
       let synthesisDrawing: string | undefined;
+      let synthesisDrawingHistory: DrawingHistoryState | undefined;
       if (synthesisRaw) {
         try {
           const parsed = JSON.parse(synthesisRaw);
           if (parsed && typeof parsed === 'object') {
             synthesis = parsed.text || '';
             synthesisDrawing = parsed.drawing;
+            synthesisDrawingHistory = parsed.drawingHistory;
           } else {
             synthesis = synthesisRaw;
           }
@@ -87,6 +101,7 @@ export function Wizard({ entryId, onFinish }: WizardProps) {
         distortions,
         synthesis,
         synthesisDrawing,
+        synthesisDrawingHistory,
       };
     },
     [decrypt]
@@ -205,16 +220,17 @@ export function Wizard({ entryId, onFinish }: WizardProps) {
     }
   };
 
-  const handleSynthesisSubmit = async (synthesis: string, drawing?: string) => {
+  const handleSynthesisSubmit = async (synthesis: string, drawing?: string, drawingHistory?: DrawingHistoryState) => {
     dispatch(WizardActions.setLoading(true));
     try {
-      const payload = JSON.stringify({ text: synthesis, drawing });
+      const backendHistory = drawingHistory ? truncateHistoryState(drawingHistory) : undefined;
+      const payload = JSON.stringify({ text: synthesis, drawing, drawingHistory: backendHistory });
       const encryptedSynthesis = await encrypt(payload);
       await api.submitSynthesis({
         entryId: state.session.entryId,
         synthesis: encryptedSynthesis,
       });
-      dispatch(WizardActions.complete({ ...state.session, synthesis, synthesisDrawing: drawing }));
+      dispatch(WizardActions.complete({ ...state.session, synthesis, synthesisDrawing: drawing, synthesisDrawingHistory: drawingHistory }));
       onFinish(state.session.entryId);
     } catch (err) {
       handleError(err);
@@ -307,6 +323,7 @@ export function Wizard({ entryId, onFinish }: WizardProps) {
               entryId={state.session.entryId}
               synthesis={state.session.synthesis}
               drawing={state.session.synthesisDrawing}
+              drawingHistory={state.session.synthesisDrawingHistory}
               thesis={state.session.thesis}
               onChange={synthesis => dispatch(WizardActions.setSynthesis(synthesis))}
               onSubmit={handleSynthesisSubmit}

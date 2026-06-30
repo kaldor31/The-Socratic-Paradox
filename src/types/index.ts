@@ -127,6 +127,8 @@ export interface JournalEntry {
   answers: string;
   // encrypted PNG data URL
   drawing?: string;
+  // encrypted JSON of { index: number; items: { strokeCount: number; dataUrl: string }[] }
+  drawingHistory?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -137,4 +139,6 @@ export interface UpsertJournalEntryDto {
   answers: string;
   // encrypted PNG data URL
   drawing?: string;
+  // encrypted JSON of drawing history state (up to 10 steps persisted)
+  drawingHistory?: string;
 }

@@ -33,6 +33,11 @@ export interface DistortionOption {
   evidence: string;
 }
 
+export interface DrawingHistoryState {
+  index: number;
+  items: { strokeCount: number; dataUrl: string }[];
+}
+
 export interface WizardSession {
   entryId: string;
   status: WizardStep;
@@ -42,6 +47,7 @@ export interface WizardSession {
   distortions: DistortionOption[];
   synthesis: string;
   synthesisDrawing?: string;
+  synthesisDrawingHistory?: DrawingHistoryState;
 }
 
 export interface WizardState {

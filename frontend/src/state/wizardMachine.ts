@@ -11,6 +11,7 @@ export const initialWizardState: WizardState = {
     distortions: [],
     synthesis: '',
     synthesisDrawing: undefined,
+    synthesisDrawingHistory: undefined,
   },
   isLoading: false,
   error: null,

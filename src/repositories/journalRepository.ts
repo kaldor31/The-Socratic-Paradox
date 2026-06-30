@@ -23,6 +23,7 @@ function parseJournalEntry(row: Record<string, unknown>): JournalEntry {
     entryDate: toDateString(row.entryDate),
     answers: (row.answers as string) ?? '',
     drawing: (row.drawing as string) ?? undefined,
+    drawingHistory: (row.drawingHistory as string) ?? undefined,
     createdAt: toIsoString(row.createdAt),
     updatedAt: toIsoString(row.updatedAt),
   };
@@ -33,11 +34,12 @@ export class JournalRepository {
 
   async upsert(userId: string, dto: UpsertJournalEntryDto): Promise<JournalEntry> {
     const rows = await this.db`
-      INSERT INTO journal_entries (user_id, entry_date, answers, drawing)
-      VALUES (${userId}, ${dto.entryDate}, ${dto.answers}, ${dto.drawing ?? null})
+      INSERT INTO journal_entries (user_id, entry_date, answers, drawing, drawing_history)
+      VALUES (${userId}, ${dto.entryDate}, ${dto.answers}, ${dto.drawing ?? null}, ${dto.drawingHistory ?? null})
       ON CONFLICT (user_id, entry_date)
       DO UPDATE SET answers = EXCLUDED.answers,
                     drawing = EXCLUDED.drawing,
+                    drawing_history = EXCLUDED.drawing_history,
                     updated_at = now()
       RETURNING *
     `;

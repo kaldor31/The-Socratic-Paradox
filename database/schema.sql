@@ -88,9 +88,12 @@ CREATE TABLE IF NOT EXISTS journal_entries (
     -- encrypted client-side
     answers         TEXT NOT NULL DEFAULT '',
     drawing         TEXT,
+    drawing_history TEXT,
     created_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
     updated_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
     UNIQUE(user_id, entry_date)
 );
+
+ALTER TABLE journal_entries ADD COLUMN IF NOT EXISTS drawing_history TEXT;
 
 COMMIT;

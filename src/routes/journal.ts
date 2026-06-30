@@ -9,6 +9,7 @@ const upsertSchema = z.object({
   entryDate: z.string().date(),
   answers: z.string().min(1),
   drawing: z.string().optional(),
+  drawingHistory: z.string().optional(),
 });
 
 const dateParamSchema = z.object({

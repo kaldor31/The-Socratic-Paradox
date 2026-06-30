@@ -1,5 +1,6 @@
 import { useRef, useEffect, forwardRef, useImperativeHandle, useState, useCallback } from 'react';
 import { Eraser, Undo2, Redo2, Trash2 } from 'lucide-react';
+import type { DrawingHistoryState } from '../state/types';
 
 const CANVAS_WIDTH = 600;
 const CANVAS_HEIGHT = 300;
@@ -13,6 +14,7 @@ function getCanvasBg() {
 
 export interface JournalCanvasRef {
   getDataUrl: () => string;
+  getHistoryState: () => DrawingHistoryState;
   clear: () => void;
   hasDrawing: () => boolean;
   undo: () => void;
@@ -21,6 +23,7 @@ export interface JournalCanvasRef {
 
 interface JournalCanvasProps {
   initialDrawing?: string;
+  initialHistory?: DrawingHistoryState;
   onChange?: () => void;
   storageKey?: string;
 }
@@ -31,7 +34,7 @@ interface HistoryItem {
 }
 
 export const JournalCanvas = forwardRef<JournalCanvasRef, JournalCanvasProps>(
-  function JournalCanvas({ initialDrawing, onChange, storageKey }, ref) {
+  function JournalCanvas({ initialDrawing, initialHistory, onChange, storageKey }, ref) {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const ctxRef = useRef<CanvasRenderingContext2D | null>(null);
     const isDrawingRef = useRef(false);
@@ -100,14 +103,10 @@ export const JournalCanvas = forwardRef<JournalCanvasRef, JournalCanvasProps>(
       setHistoryIndex(0);
     }, []);
 
-    const loadHistoryFromStorage = useCallback(async () => {
-      if (!storageKey) return null;
-      const raw = localStorage.getItem(storageKey);
-      if (!raw) return null;
+    const loadHistoryFromState = useCallback(async (state: DrawingHistoryState): Promise<{ index: number; items: HistoryItem[] } | null> => {
       try {
-        const parsed = JSON.parse(raw) as { index: number; items: { strokeCount: number; dataUrl: string }[] };
         const items: HistoryItem[] = [];
-        for (const entry of parsed.items) {
+        for (const entry of state.items) {
           const data = await new Promise<ImageData>((resolve, reject) => {
             const img = new Image();
             img.onload = () => {
@@ -124,11 +123,23 @@ export const JournalCanvas = forwardRef<JournalCanvasRef, JournalCanvasProps>(
           });
           items.push({ data, strokeCount: entry.strokeCount });
         }
-        return { index: parsed.index, items };
+        return { index: state.index, items };
       } catch {
         return null;
       }
-    }, [storageKey]);
+    }, []);
+
+    const loadHistoryFromStorage = useCallback(async () => {
+      if (!storageKey) return null;
+      const raw = localStorage.getItem(storageKey);
+      if (!raw) return null;
+      try {
+        const parsed = JSON.parse(raw) as DrawingHistoryState;
+        return loadHistoryFromState(parsed);
+      } catch {
+        return null;
+      }
+    }, [storageKey, loadHistoryFromState]);
 
     const saveHistoryToStorage = useCallback(() => {
       if (!storageKey) return;
@@ -174,6 +185,25 @@ export const JournalCanvas = forwardRef<JournalCanvasRef, JournalCanvasProps>(
       skipOnChangeRef.current = true;
 
       (async () => {
+        if (initialHistory?.items.length) {
+          const loaded = await loadHistoryFromState(initialHistory);
+          if (loaded) {
+            ctx.fillStyle = getCanvasBg();
+            ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+            const item = loaded.items[loaded.index];
+            if (item) {
+              ctx.putImageData(item.data, 0, 0);
+              strokeCountRef.current = item.strokeCount;
+            }
+            setHistory(loaded.items);
+            setHistoryIndex(loaded.index);
+          } else {
+            resetCanvas();
+          }
+          skipOnChangeRef.current = false;
+          return;
+        }
+
         if (initialDrawing) {
           ctx.fillStyle = getCanvasBg();
           ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
@@ -311,6 +341,19 @@ export const JournalCanvas = forwardRef<JournalCanvasRef, JournalCanvasProps>(
       return canvas ? canvas.toDataURL('image/png') : '';
     };
 
+    const getHistoryState = useCallback((): DrawingHistoryState => {
+      const items = historyRef.current.map(item => {
+        const temp = document.createElement('canvas');
+        temp.width = item.data.width;
+        temp.height = item.data.height;
+        const tctx = temp.getContext('2d');
+        if (!tctx) return null;
+        tctx.putImageData(item.data, 0, 0);
+        return { strokeCount: item.strokeCount, dataUrl: temp.toDataURL('image/png') };
+      }).filter((item): item is { strokeCount: number; dataUrl: string } => item !== null);
+      return { index: historyIndexRef.current, items };
+    }, []);
+
     const clear = useCallback(() => {
       const ctx = ctxRef.current;
       if (!ctx) return;
@@ -337,7 +380,7 @@ export const JournalCanvas = forwardRef<JournalCanvasRef, JournalCanvasProps>(
       setHistoryIndex(prev => prev + 1);
     }, [historyIndex, history, applySnapshot]);
 
-    useImperativeHandle(ref, () => ({ getDataUrl, clear, hasDrawing, undo, redo }));
+    useImperativeHandle(ref, () => ({ getDataUrl, getHistoryState, clear, hasDrawing, undo, redo }));
 
     return (
       <div className="space-y-3">

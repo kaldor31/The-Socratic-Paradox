@@ -3,6 +3,7 @@ import jwt from 'jsonwebtoken';
 import { randomBytes, randomInt } from 'crypto';
 import { userRepository } from '../repositories/userRepository.js';
 import { logger } from '../utils/logger.js';
+import { ClientError } from '../errors.js';
 import type { User } from '../types/index.js';
 
 const DEFAULT_SECRET = 'dev-secret-change-in-production';
@@ -100,7 +101,7 @@ async function sendEmailCode(email: string, code: string, subject: string): Prom
     const msg = 'Email service not configured (set RESEND_API_KEY or SMTP credentials)';
     logger.warn(msg);
     if (process.env.NODE_ENV === 'production') {
-      throw new Error(msg);
+      throw new ClientError(msg);
     }
     return;
   }
@@ -127,7 +128,7 @@ export class AuthService {
     const email = dto.email.toLowerCase().trim();
     const existing = await userRepository.findByEmail(email);
     if (existing) {
-      throw new Error('Email already registered');
+      throw new ClientError('Email already registered');
     }
 
     const passwordHash = await bcrypt.hash(dto.password, BCRYPT_ROUNDS);
@@ -150,18 +151,20 @@ export class AuthService {
     } catch (err) {
       logger.error({ err, email }, 'Failed to send verification email');
       await userRepository.deleteById(user.id).catch(() => {});
-      throw new Error('Failed to send verification email. Please check your email service configuration or try again.');
+      throw err instanceof ClientError
+        ? err
+        : new ClientError('Failed to send verification email. Please check your email service configuration or try again.');
     }
   }
 
   async verify(dto: VerifyDto): Promise<AuthResult> {
     const email = dto.email.toLowerCase().trim();
     const user = await userRepository.findByEmail(email);
-    if (!user) throw new Error('User not found');
-    if (user.isVerified) throw new Error('Account already verified');
-    if (user.verificationCode !== dto.code) throw new Error('Invalid verification code');
+    if (!user) throw new ClientError('User not found', 404);
+    if (user.isVerified) throw new ClientError('Account already verified');
+    if (user.verificationCode !== dto.code) throw new ClientError('Invalid verification code');
     if (user.verificationExpiresAt && new Date(user.verificationExpiresAt) < new Date()) {
-      throw new Error('Verification code expired');
+      throw new ClientError('Verification code expired');
     }
 
     await userRepository.markVerified(user.id);
@@ -174,10 +177,10 @@ export class AuthService {
     const normalizedEmail = email.toLowerCase().trim();
     const user = await userRepository.findByEmail(normalizedEmail);
     if (!user) {
-      throw new Error('If this email is registered, a verification code has been sent');
+      throw new ClientError('If this email is registered, a verification code has been sent');
     }
     if (user.isVerified) {
-      throw new Error('Account is already verified');
+      throw new ClientError('Account is already verified');
     }
 
     const code = generateVerificationCode();
@@ -190,11 +193,11 @@ export class AuthService {
   async login(dto: LoginDto): Promise<AuthResult> {
     const email = dto.email.toLowerCase().trim();
     const user = await userRepository.findByEmail(email);
-    if (!user || !user.passwordHash) throw new Error('Invalid email or password');
-    if (!user.isVerified) throw new Error('Please verify your email first');
+    if (!user || !user.passwordHash) throw new ClientError('Invalid email or password');
+    if (!user.isVerified) throw new ClientError('Please verify your email first');
 
     const valid = await bcrypt.compare(dto.password, user.passwordHash);
-    if (!valid) throw new Error('Invalid email or password');
+    if (!valid) throw new ClientError('Invalid email or password');
 
     return { user, tokens: signTokens(user) };
   }
@@ -202,7 +205,7 @@ export class AuthService {
   async forgotPassword(dto: ForgotPasswordDto): Promise<{ message: string; token?: string }> {
     const email = dto.email.toLowerCase().trim();
     const user = await userRepository.findByEmail(email);
-    if (!user || !user.passwordHash) throw new Error('If this email exists, a reset code has been sent');
+    if (!user || !user.passwordHash) throw new ClientError('If this email exists, a reset code has been sent');
 
     const token = generateResetToken();
     const tokenHash = await bcrypt.hash(token, BCRYPT_ROUNDS);
@@ -216,12 +219,12 @@ export class AuthService {
   async resetPassword(dto: ResetPasswordDto): Promise<AuthResult> {
     const email = dto.email.toLowerCase().trim();
     const user = await userRepository.findByEmail(email);
-    if (!user || !user.passwordHash) throw new Error('Invalid reset request');
-    if (!user.resetToken) throw new Error('Invalid reset code');
+    if (!user || !user.passwordHash) throw new ClientError('Invalid reset request');
+    if (!user.resetToken) throw new ClientError('Invalid reset code');
     const valid = await bcrypt.compare(dto.token, user.resetToken);
-    if (!valid) throw new Error('Invalid reset code');
+    if (!valid) throw new ClientError('Invalid reset code');
     if (user.resetExpiresAt && new Date(user.resetExpiresAt) < new Date()) {
-      throw new Error('Reset code expired');
+      throw new ClientError('Reset code expired');
     }
 
     const passwordHash = await bcrypt.hash(dto.newPassword, BCRYPT_ROUNDS);
@@ -248,20 +251,20 @@ export class AuthService {
 
   async requestEmailChange(userId: string, password: string, newEmail: string): Promise<{ message: string }> {
     const user = await userRepository.findById(userId);
-    if (!user) throw new Error('User not found');
-    if (!user.passwordHash) throw new Error('Password is required to change email');
+    if (!user) throw new ClientError('User not found', 404);
+    if (!user.passwordHash) throw new ClientError('Password is required to change email');
 
     const valid = await bcrypt.compare(password, user.passwordHash);
-    if (!valid) throw new Error('Invalid password');
+    if (!valid) throw new ClientError('Invalid password');
 
     const email = newEmail.toLowerCase().trim();
     if (email === user.email?.toLowerCase()) {
-      throw new Error('New email must be different from current email');
+      throw new ClientError('New email must be different from current email');
     }
 
     const existing = await userRepository.findByEmail(email);
     if (existing && existing.id !== user.id) {
-      throw new Error('Email already in use');
+      throw new ClientError('Email already in use');
     }
 
     const code = generateVerificationCode();
@@ -273,19 +276,21 @@ export class AuthService {
       return { message: 'Verification code sent to new email' };
     } catch (err) {
       logger.error({ err, email }, 'Failed to send email change verification');
-      return { message: 'Verification code created. Please check the server logs or your spam folder.' };
+      throw err instanceof ClientError
+        ? err
+        : new ClientError('Failed to send email change verification. Please check your email service configuration or try again.');
     }
   }
 
   async confirmEmailChange(userId: string, newEmail: string, code: string): Promise<{ user: User }> {
     const user = await userRepository.findById(userId);
-    if (!user) throw new Error('User not found');
+    if (!user) throw new ClientError('User not found', 404);
 
     const email = newEmail.toLowerCase().trim();
-    if (user.pendingEmail !== email) throw new Error('Email change was not requested');
-    if (user.emailChangeCode !== code) throw new Error('Invalid verification code');
+    if (user.pendingEmail !== email) throw new ClientError('Email change was not requested');
+    if (user.emailChangeCode !== code) throw new ClientError('Invalid verification code');
     if (user.emailChangeExpiresAt && new Date(user.emailChangeExpiresAt) < new Date()) {
-      throw new Error('Verification code expired');
+      throw new ClientError('Verification code expired');
     }
 
     await userRepository.updateEmail(userId, email);
@@ -297,12 +302,12 @@ export class AuthService {
   async updateHandle(userId: string, handle: string): Promise<{ user: User }> {
     const trimmed = handle.trim();
     if (trimmed.length < 3 || trimmed.length > 32) {
-      throw new Error('Handle must be between 3 and 32 characters');
+      throw new ClientError('Handle must be between 3 and 32 characters');
     }
 
     const existing = await userRepository.findByHandle(trimmed);
     if (existing && existing.id !== userId) {
-      throw new Error('Handle already in use');
+      throw new ClientError('Handle already in use');
     }
 
     await userRepository.updateHandle(userId, trimmed);

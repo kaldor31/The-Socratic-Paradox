@@ -93,7 +93,10 @@ async function sendEmailCode(email: string, code: string, subject: string): Prom
       text: `Your verification code is: ${code}\n\nIt expires in ${VERIFICATION_EXPIRES_MINUTES} minutes.`,
       html: `<p>Your verification code is: <strong>${code}</strong></p><p>It expires in ${VERIFICATION_EXPIRES_MINUTES} minutes.</p>`,
     });
-    if (error) throw new Error(`Resend error: ${error.message}`);
+    if (error) {
+      logger.error({ error, email, from }, 'Resend send failed');
+      throw new ClientError(`Email provider error: ${error.message}. Make sure EMAIL_FROM is a verified domain address.`);
+    }
     return;
   }
 

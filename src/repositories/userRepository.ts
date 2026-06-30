@@ -73,6 +73,20 @@ export class UserRepository {
     `;
   }
 
+  async setVerificationCode(userId: string, code: string, expiresAt: string): Promise<void> {
+    await this.db`
+      UPDATE users
+      SET verification_code = ${code},
+          verification_expires_at = ${expiresAt},
+          updated_at = now()
+      WHERE id = ${userId}
+    `;
+  }
+
+  async deleteById(userId: string): Promise<void> {
+    await this.db`DELETE FROM users WHERE id = ${userId}`;
+  }
+
   async setResetToken(userId: string, token: string, expiresAt: string): Promise<void> {
     await this.db`
       UPDATE users

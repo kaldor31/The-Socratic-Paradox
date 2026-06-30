@@ -15,7 +15,7 @@ type AuthMode = 'login' | 'register' | 'verify' | 'forgot' | 'reset';
 
 export function Auth({ onClose }: AuthProps) {
   const { t } = useLanguage();
-  const { user, login, register, verify, resetPassword } = useAuth();
+  const { user, login, register, resendVerification, verify, resetPassword } = useAuth();
   const { isUnlocked, unlock } = useEncryption();
   const needsUnlock = !!user && !isUnlocked;
   const [mode, setMode] = useState<AuthMode>('login');
@@ -83,6 +83,20 @@ export function Auth({ onClose }: AuthProps) {
       onClose();
     } catch (err) {
       setError(err instanceof Error ? err.message : t('error.verificationFailed'));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleResend = async () => {
+    if (!email) return;
+    setLoading(true);
+    reset();
+    try {
+      await resendVerification(email);
+      setMessage(t('auth.verificationResent'));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : t('error.unknown'));
     } finally {
       setLoading(false);
     }
@@ -194,6 +208,11 @@ export function Auth({ onClose }: AuthProps) {
           <button type="submit" disabled={loading} className="btn-primary w-full justify-center disabled:opacity-50">
             {loading ? t('common.loading') : t('auth.verify')}
           </button>
+          <div className="text-center">
+            <button type="button" onClick={handleResend} disabled={loading} className="text-sm text-accent-gold hover:underline disabled:opacity-50">
+              {t('auth.resendCode')}
+            </button>
+          </div>
         </form>
       )}
 

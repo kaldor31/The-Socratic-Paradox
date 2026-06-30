@@ -71,6 +71,7 @@ function signTokens(user: User): AuthTokens {
 }
 
 async function sendEmailCode(email: string, code: string, subject: string): Promise<void> {
+  const resendApiKey = process.env.RESEND_API_KEY;
   const smtpHost = process.env.SMTP_HOST;
   const smtpPort = process.env.SMTP_PORT ? Number(process.env.SMTP_PORT) : undefined;
   const smtpUser = process.env.SMTP_USER;
@@ -81,8 +82,26 @@ async function sendEmailCode(email: string, code: string, subject: string): Prom
     logger.info({ email, code, subject }, 'Email code (development only)');
   }
 
+  if (resendApiKey) {
+    const { Resend } = await import('resend');
+    const resend = new Resend(resendApiKey);
+    const { error } = await resend.emails.send({
+      from,
+      to: email,
+      subject,
+      text: `Your verification code is: ${code}\n\nIt expires in ${VERIFICATION_EXPIRES_MINUTES} minutes.`,
+      html: `<p>Your verification code is: <strong>${code}</strong></p><p>It expires in ${VERIFICATION_EXPIRES_MINUTES} minutes.</p>`,
+    });
+    if (error) throw new Error(`Resend error: ${error.message}`);
+    return;
+  }
+
   if (!smtpHost || !smtpUser || !smtpPass) {
-    logger.warn('SMTP not configured; code not sent');
+    const msg = 'Email service not configured (set RESEND_API_KEY or SMTP credentials)';
+    logger.warn(msg);
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error(msg);
+    }
     return;
   }
 
@@ -130,10 +149,8 @@ export class AuthService {
       return { user, message: 'Verification code sent to email' };
     } catch (err) {
       logger.error({ err, email }, 'Failed to send verification email');
-      return {
-        user,
-        message: 'Verification code created. Please check the server logs or your spam folder.',
-      };
+      await userRepository.deleteById(user.id).catch(() => {});
+      throw new Error('Failed to send verification email. Please check your email service configuration or try again.');
     }
   }
 
@@ -151,6 +168,23 @@ export class AuthService {
     const refreshed = await userRepository.findById(user.id);
     if (!refreshed) throw new Error('User not found');
     return { user: refreshed, tokens: signTokens(refreshed) };
+  }
+
+  async resendVerification(email: string): Promise<{ message: string }> {
+    const normalizedEmail = email.toLowerCase().trim();
+    const user = await userRepository.findByEmail(normalizedEmail);
+    if (!user) {
+      throw new Error('If this email is registered, a verification code has been sent');
+    }
+    if (user.isVerified) {
+      throw new Error('Account is already verified');
+    }
+
+    const code = generateVerificationCode();
+    const expiresAt = new Date(Date.now() + VERIFICATION_EXPIRES_MINUTES * 60 * 1000).toISOString();
+    await userRepository.setVerificationCode(user.id, code, expiresAt);
+    await sendEmailCode(user.email!, code, 'Verify your Socratic Paradox account');
+    return { message: 'Verification code sent to email' };
   }
 
   async login(dto: LoginDto): Promise<AuthResult> {

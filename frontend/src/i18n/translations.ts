@@ -28,7 +28,9 @@ export const translations = {
     'auth.verifyTitle': 'Verify Email',
     'auth.verifyCode': 'Verification Code',
     'auth.verify': 'Verify',
+    'auth.resendCode': 'Didn\'t receive the code? Resend',
     'auth.verificationSent': 'A verification code has been sent to your email.',
+    'auth.verificationResent': 'A new verification code has been sent.',
     'auth.resetSent': 'A reset code has been sent to your email.',
     'account.title': 'Account',
     'account.sessions': 'Sessions',
@@ -193,6 +195,7 @@ export const translations = {
     'error.verificationFailed': 'Verification failed',
     'error.resetFailed': 'Reset failed',
     'error.sendResetFailed': 'Failed to send reset code',
+    'error.unknown': 'Something went wrong. Please try again.',
   },
   ru: {
     'product.name': 'The Socratic Paradox',
@@ -223,7 +226,9 @@ export const translations = {
     'auth.verifyTitle': 'Подтвердите почту',
     'auth.verifyCode': 'Код подтверждения',
     'auth.verify': 'Подтвердить',
+    'auth.resendCode': 'Не пришёл код? Отправить повторно',
     'auth.verificationSent': 'Код подтверждения отправлен на вашу почту.',
+    'auth.verificationResent': 'Новый код подтверждения отправлен.',
     'auth.resetSent': 'Код сброса отправлен на вашу почту.',
     'account.title': 'Аккаунт',
     'account.sessions': 'Сессии',
@@ -388,6 +393,7 @@ export const translations = {
     'error.verificationFailed': 'Не удалось подтвердить',
     'error.resetFailed': 'Не удалось сбросить пароль',
     'error.sendResetFailed': 'Не удалось отправить код сброса',
+    'error.unknown': 'Что-то пошло не так. Попробуйте ещё раз.',
   },
 } as const;
 

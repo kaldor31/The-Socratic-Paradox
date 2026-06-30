@@ -54,6 +54,10 @@ const verifySchema = z.object({
   code: z.string().length(6),
 });
 
+const resendSchema = z.object({
+  email: z.string().email(),
+});
+
 const loginSchema = z.object({
   email: z.string().email(),
   password: z.string().min(8),
@@ -108,6 +112,16 @@ router.post('/auth/register', authLimiter, async (req: Request, res: Response, n
     const dto = registerSchema.parse(req.body);
     const result = await authService.register(dto);
     res.status(201).json({ ok: true, user: sanitizeUser(result.user), message: result.message });
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.post('/auth/resend-verification', authLimiter, async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { email } = resendSchema.parse(req.body);
+    const result = await authService.resendVerification(email);
+    res.json({ ok: true, message: result.message });
   } catch (err) {
     next(err);
   }

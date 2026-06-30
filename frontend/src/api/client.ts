@@ -94,6 +94,12 @@ export const api = {
   register: (dto: RegisterDto) =>
     request<AuthResponse>('/auth/register', { method: 'POST', body: JSON.stringify(dto) }),
 
+  resendVerification: (email: string) =>
+    request<{ ok: boolean; message: string }>('/auth/resend-verification', {
+      method: 'POST',
+      body: JSON.stringify({ email }),
+    }),
+
   verify: (dto: VerifyDto) =>
     request<AuthResponse>('/auth/verify', { method: 'POST', body: JSON.stringify(dto) }),
 

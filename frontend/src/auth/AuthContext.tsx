@@ -8,6 +8,7 @@ interface AuthContextValue {
   isAuthenticated: boolean;
   login: (dto: LoginDto) => Promise<AuthUser>;
   register: (dto: RegisterDto) => Promise<void>;
+  resendVerification: (email: string) => Promise<void>;
   verify: (dto: VerifyDto) => Promise<AuthUser>;
   resetPassword: (dto: ResetPasswordDto) => Promise<AuthUser>;
   logout: () => void;
@@ -45,6 +46,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await api.register(dto);
   }, []);
 
+  const resendVerification = useCallback(async (email: string) => {
+    await api.resendVerification(email);
+  }, []);
+
   const verify = useCallback(async (dto: VerifyDto) => {
     const res = await api.verify(dto);
     setUser(res.user);
@@ -72,6 +77,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         isAuthenticated: !!user && !user.isAnonymous,
         login,
         register,
+        resendVerification,
         verify,
         resetPassword,
         logout,
